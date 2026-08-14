@@ -105,7 +105,6 @@ PRODUCT_PACKAGES += \
 # Remaining Rockchip HAL services
 PRODUCT_PACKAGES += \
     android.frameworks.stats-V1-ndk.vendor \
-    android.hardware.bluetooth.audio-V3-ndk.vendor \
     android.hardware.health-V2-ndk.vendor \
     android.hardware.light-V2-ndk.vendor \
     android.hardware.media.bufferpool2-V1-ndk.vendor \
@@ -145,6 +144,129 @@ PRODUCT_PACKAGES += \
 PRODUCT_PACKAGES += \
     android.hardware.tv.hdmi.cec-V1-ndk.vendor \
     android.hardware.tv.hdmi.connection-V1-ndk.vendor
+
+##
+## BLOBS REPLACED BY BUILDS FROM AOSP SOURCE
+##
+## Everything below used to be extracted. It is all upstream code that the stock
+## ROM shipped unmodified, which was established by authorship rather than by
+## eyeballing: Rockchip's own Android 14 SDK tree at
+## /home/tomin/btrfs-subvolumes/android/edge2-a14 is a full set of git repos, so
+##
+##   git -C $RK/<repo> log --format='%ae %s' -- <module dir> | grep rock-chips.com
+##
+## says whether Rockchip ever touched the directory the blob was built from. The
+## exclusions in gen-proprietary-files.py carry the results, including the five
+## places where that grep did find something and the blob therefore stayed
+## (audio@7.1-impl, bluetooth@1.0, tv.hdmi.{cec,connection}, wifi).
+##
+## Module names take a .vendor suffix when the module is only vendor_available;
+## modules that are already "vendor: true" (the HAL impls, the effects, the
+## libhardware modules) must not have one.
+
+# Audio: ALSA helpers, the effect factory and the effects it loads, and the
+# legacy libhardware audio modules. audio.primary.default.so is AOSP's stub HAL;
+# the real one is the audio.primary.rk30board.so blob (ro.hardware=rk30board).
+PRODUCT_PACKAGES += \
+    android.hardware.audio.effect@7.0-impl \
+    audio.primary.default \
+    audio.r_submix.default \
+    audio.stub.default \
+    audio.usb.default \
+    audio.usbv2.default \
+    libalsautils \
+    libalsautilsv2 \
+    libaudiopreprocessing \
+    libbundlewrapper \
+    libdownmix \
+    libdynproc \
+    libeffectproxy \
+    libeffects \
+    libhapticgenerator \
+    libldnhncr \
+    libnbaio_mono \
+    libreverbwrapper \
+    libtinyalsav2.vendor \
+    libvibratorutils.vendor \
+    libvisualizer
+
+# Bluetooth audio HAL module and the HIDL session library it links
+PRODUCT_PACKAGES += \
+    audio.bluetooth.default \
+    libbluetooth_audio_session
+
+# Codec 2: the plugin store and the two bufferpool libraries that pair with
+# libcodec2_vndk, which is built from source already
+PRODUCT_PACKAGES += \
+    libcodec2_hidl_plugin \
+    libstagefright_aidl_bufferpool2.vendor \
+    libstagefright_bufferpool@2.0.1.vendor
+
+# Camera: AOSP's HIDL device and provider wrappers, which Rockchip's
+# camera.device-*-impl-rk.so and the two legacy providers link against
+PRODUCT_PACKAGES += \
+    android.hardware.camera.provider@2.4-impl \
+    camera.device@1.0-impl \
+    camera.device@3.2-impl \
+    camera.device@3.3-impl \
+    camera.device@3.4-external-impl \
+    camera.device@3.4-impl \
+    camera.device@3.5-external-impl \
+    camera.device@3.5-impl \
+    camera.device@3.6-external-impl
+
+# Graphics. Rockchip's libdrm fork adds a rockchip/ API and drmModeAddFB2_ext,
+# but the stock libdrm.so exports no rockchip_* symbol and none of its 18
+# consumers in the stock image (HWC, gralloc, mapper, libpq, libiep,
+# hw_output) references drmModeAddFB2_ext, so plain AOSP libdrm is enough.
+PRODUCT_PACKAGES += \
+    gralloc.default \
+    libdrm.vendor
+
+# Security support libraries for the OP-TEE keymint/keymaster blobs, plus the
+# keystore engine wpa_supplicant links against
+PRODUCT_PACKAGES += \
+    libcppbor_external.vendor \
+    libkeymaster4support.vendor \
+    libkeystore-engine-wifi-hidl
+
+# ClearKey DRM plugin, to go with android.hardware.drm-service.clearkey below
+PRODUCT_PACKAGES += \
+    libdrmclearkeyplugin
+
+# TV input HIDL wrapper (rockchip.hardware.tv.input.* is the implementation)
+PRODUCT_PACKAGES += \
+    android.hardware.tv.input@1.0-impl
+
+# RIL. Nothing loads these -- there is no rild and no radio HAL in the ROM --
+# but stock shipped them and they are three lines of parity.
+PRODUCT_PACKAGES += \
+    libreference-ril \
+    libril \
+    librilutils
+
+# Plain utility libraries the blobs link against. libtinyalsav2 (above) is the
+# one that moves the check-vendor-deps.py baseline: the stock blob was built
+# with UBSan and wanted libclang_rt.ubsan_standalone-*, which the ROM does not
+# ship; ours is not.
+PRODUCT_PACKAGES += \
+    libbinderdebug.vendor \
+    libmediautils_vendor.vendor \
+    libmemunreachable.vendor \
+    libz_stable.vendor \
+    local_time.default
+
+# vndservicemanager. The stock ROM ships vendor/etc/init/vndservicemanager.rc and
+# the vendor HIDL HALs do use /dev/binderfs/vndbinder, but the binary was in
+# gen-proprietary-files.py's EXCLUDE_BINS and nothing in the product built it, so
+# every boot ended up with
+#
+#   init: Could not start shutdown critical service 'vndservicemanager':
+#         Cannot find '/vendor/bin/vndservicemanager'
+#
+# The module installs the identical .rc itself and pulls in vndservice.
+PRODUCT_PACKAGES += \
+    vndservicemanager
 
 ## Shims
 # Attached to individual blobs by blob_fixup() in extract-files.sh, which
@@ -192,9 +314,11 @@ PRODUCT_PACKAGES += \
 # its own bluetooth_audio.xml VINTF fragment and pulls in
 # libbluetooth_audio_session_aidl, both of which replace the stock copies.
 #
-# Note this tree's latest bluetooth.audio AIDL is V4 while the stock blobs were
-# built against V3, so android.hardware.bluetooth.audio-V3-ndk.vendor stays in the
-# list above: vendor/lib{,64}/hw/audio.bluetooth.default.so still links it.
+# This tree's latest bluetooth.audio AIDL is V4 while the stock blobs were built
+# against V3. The last thing that still needed V3 was the stock
+# vendor/lib{,64}/hw/audio.bluetooth.default.so, and that is now built from source
+# too (see the FROM AOSP SOURCE block below), so the whole BT audio stack is V4 and
+# android.hardware.bluetooth.audio-V3-ndk.vendor is gone from the list above.
 PRODUCT_PACKAGES += \
     android.hardware.bluetooth.audio-impl
 
