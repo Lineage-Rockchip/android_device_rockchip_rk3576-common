@@ -1,0 +1,162 @@
+#!/usr/bin/env python3
+#
+# Copyright (C) 2025 The LineageOS Project
+#
+# SPDX-License-Identifier: Apache-2.0
+#
+"""mkbootimg wrapper that writes a Rockchip-compatible boot image ID.
+
+Rockchip's U-Boot verifies the SHA1 stored in the boot image header before it
+will hand control to the kernel (CONFIG_ANDROID_BOOT_IMAGE_HASH,
+common/image-android.c:android_image_separate).  It hashes
+
+    kernel | kernel_size | ramdisk | ramdisk_size | second | second_size
+           [ | recovery_dtbo | recovery_dtbo_size ]   (header_version > 0)
+           [ | dtb          | dtb_size          ]   (header_version > 1)
+
+which is what upstream AOSP mkbootimg produces.
+
+LineageOS carries a local patch to system/tools/mkbootimg (commit caa73eb,
+"mkbootimg: add support for --dt") which adds an unconditional
+
+    update_sha(sha, args.dt)
+
+right after the 'second' section.  When --dt is not used -- and it cannot be
+used here, since mkbootimg rejects --dt together with header_version > 0 --
+args.dt is None and update_sha() still folds four zero bytes into the digest.
+The resulting ID is therefore four bytes of input longer than what any
+non-Lineage tool computes.
+
+Nothing in AOSP ever checks that field, so the discrepancy is invisible on
+most devices.  Rockchip's bootloader does check it, prints
+
+    Hash from header: ...
+    Hash real:        ...
+    Failed to load android image
+    Android boot failed, error -1.
+
+and drops to the U-Boot prompt.
+
+This wrapper runs the real mkbootimg unmodified and then rewrites the ID field
+of the finished image with the digest computed the upstream way, so the shared
+system/tools/mkbootimg checkout does not have to be patched.  Wired up through
+BOARD_CUSTOM_MKBOOTIMG, so it covers boot.img and recovery.img alike.
+"""
+
+import hashlib
+import os
+import struct
+import subprocess
+import sys
+
+BOOT_MAGIC = b'ANDROID!'
+# Offsets into the boot image header, from
+# system/tools/mkbootimg/include/bootimg/bootimg.h
+OFF_KERNEL_SIZE = 8
+OFF_RAMDISK_SIZE = 16
+OFF_SECOND_SIZE = 24
+OFF_PAGE_SIZE = 36
+OFF_HEADER_VERSION = 40
+OFF_ID = 576
+OFF_RECOVERY_DTBO_SIZE = 1632
+OFF_HEADER_SIZE = 1644
+OFF_DTB_SIZE = 1648
+BOOT_IMAGE_HEADER_V2_SIZE = 1660
+
+
+def find_mkbootimg():
+    """Locate the real mkbootimg.py in the source tree."""
+    candidates = []
+    top = os.environ.get('ANDROID_BUILD_TOP')
+    if top:
+        candidates.append(top)
+    candidates.append(os.getcwd())
+    # device/rockchip/rk3576-common/tools/ -> tree top
+    candidates.append(os.path.abspath(
+        os.path.join(os.path.dirname(os.path.realpath(__file__)),
+                     *([os.pardir] * 4))))
+    for base in candidates:
+        path = os.path.join(base, 'system', 'tools', 'mkbootimg')
+        if os.path.isfile(os.path.join(path, 'mkbootimg.py')):
+            return path
+    sys.exit('mkbootimg-rk: cannot find system/tools/mkbootimg')
+
+
+def u32(data, offset):
+    return struct.unpack_from('<I', data, offset)[0]
+
+
+def fix_image_id(path):
+    """Recompute the boot image ID the way Rockchip's U-Boot expects."""
+    with open(path, 'rb') as f:
+        img = f.read()
+
+    if not img.startswith(BOOT_MAGIC):
+        return  # vendor_boot, init_boot, or a signed/AVB image: not ours
+    if len(img) < BOOT_IMAGE_HEADER_V2_SIZE:
+        return
+
+    header_version = u32(img, OFF_HEADER_VERSION)
+    # v0 stores dt_size in this field, and v3+ dropped the ID entirely.
+    if header_version not in (1, 2):
+        return
+
+    page_size = u32(img, OFF_PAGE_SIZE)
+    if page_size == 0 or page_size & (page_size - 1):
+        return
+
+    def pad(size):
+        return (size + page_size - 1) // page_size * page_size
+
+    sizes = [u32(img, OFF_KERNEL_SIZE),
+             u32(img, OFF_RAMDISK_SIZE),
+             u32(img, OFF_SECOND_SIZE),
+             u32(img, OFF_RECOVERY_DTBO_SIZE)]
+    if header_version > 1:
+        sizes.append(u32(img, OFF_DTB_SIZE))
+
+    sha = hashlib.sha1()
+    offset = pad(u32(img, OFF_HEADER_SIZE))
+    for size in sizes:
+        sha.update(img[offset:offset + size])
+        sha.update(struct.pack('<I', size))
+        offset += pad(size)
+
+    image_id = sha.digest()
+    if img[OFF_ID:OFF_ID + 20] == image_id:
+        return  # already correct; the --dt patch must have been dropped
+
+    with open(path, 'r+b') as f:
+        f.seek(OFF_ID)
+        # The ID field is 32 bytes wide; SHA1 fills 20 and the rest stays zero.
+        f.write(image_id.ljust(32, b'\0'))
+    print('mkbootimg-rk: %s id -> %s' % (os.path.basename(path),
+                                         image_id.hex()))
+
+
+def main():
+    argv = sys.argv[1:]
+
+    mkbootimg_dir = find_mkbootimg()
+    env = os.environ.copy()
+    env['PYTHONPATH'] = os.pathsep.join(
+        [mkbootimg_dir] + ([env['PYTHONPATH']] if 'PYTHONPATH' in env else []))
+
+    result = subprocess.run(
+        [sys.executable, os.path.join(mkbootimg_dir, 'mkbootimg.py')] + argv,
+        env=env)
+    if result.returncode:
+        return result.returncode
+
+    # --vendor_boot images carry no ID field, so only --output is interesting.
+    for i, arg in enumerate(argv):
+        if arg in ('-o', '--output') and i + 1 < len(argv):
+            fix_image_id(argv[i + 1])
+        elif arg.startswith('--output='):
+            fix_image_id(arg[len('--output='):])
+
+    return 0
+
+
+if __name__ == '__main__':
+    sys.exit(main())

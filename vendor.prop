@@ -1,0 +1,145 @@
+#
+# Only properties the build does NOT derive itself belong here.
+#
+# These are generated from BoardConfig variables and must not be repeated,
+# otherwise post_process_props fails with "found duplicate sysprop assignments":
+#   ro.bionic.arch / ro.bionic.cpu_variant        <- TARGET_CPU_VARIANT_RUNTIME
+#   ro.bionic.2nd_arch / ro.bionic.2nd_cpu_variant <- TARGET_2ND_CPU_VARIANT_RUNTIME
+#   dalvik.vm.isa.*.variant / .features           <- DEX2OAT_TARGET_CPU_VARIANT_RUNTIME
+#   ro.hwui.use_vulkan                            <- TARGET_USES_VULKAN
+#   ro.minui.pixel_format                         <- TARGET_RECOVERY_PIXEL_FORMAT
+#   ro.board.platform                             <- TARGET_BOARD_PLATFORM
+#   ro.zygote                                     <- core_64_bit.mk
+#   ro.recovery.usb.*                             <- build defaults (same values)
+#
+
+## Bluetooth
+ro.rk.bt_enable=true
+persist.bt.power.down=true
+persist.bluetooth.btsnoopsize=0xffff
+persist.bluetooth.btsnooplogmode=disable
+persist.bluetooth.showdeviceswithoutnames=false
+vendor.bluetooth.enable_timeout_ms=11000
+
+## Dalvik heap
+dalvik.vm.heapstartsize=16m
+dalvik.vm.heapgrowthlimit=192m
+dalvik.vm.heapsize=512m
+dalvik.vm.heaptargetutilization=0.75
+dalvik.vm.heapminfree=512k
+dalvik.vm.heapmaxfree=8m
+dalvik.vm.dex2oat-threads=4
+dalvik.vm.boot-dex2oat-threads=4
+
+## DRM
+drm.service.enabled=true
+
+## Ethernet
+ro.rk.ethernet_settings=true
+
+## Graphics
+ro.hardware.egl=mali
+ro.opengles.version=196610
+ro.cpuvulkan.version=4202496
+ro.surface_flinger.has_HDR_display=true
+graphics.gpu.profiler.support=true
+vendor.gralloc.disable_afbc=0
+vendor.hwc.compose_policy=1
+vendor.hwc.device.primary=HDMI-A,TV
+persist.vendor.framebuffer.main=1920x1080@60
+
+## HDMI
+ro.rk.hdmi_enable=true
+ro.vendor.hdmi_settings=true
+ro.hdmi.device_type=4
+persist.sys.hdmi.keep_awake=false
+
+## Media
+debug.stagefright.ccodec=4
+debug.stagefright.c2inputsurface=-1
+codec2_fbc_disable=0
+rt_vdec_fbc_disable=0
+rt_retriever_enable=1
+
+## Picture quality (RKPQ)
+vendor.hwc.hwpq_force_enable=1
+persist.vendor.rkpq.fe.enable=1
+persist.vendor.rkpq.hwpq_aisd_enable=1
+persist.vendor.rkpq.hwpq_lce_ratio=10
+persist.vendor.rkpq.hwpq_shp_en=1
+persist.vendor.rkpq.io.cache.limit=64
+persist.vendor.rkpq.iptv_sr_enable=1
+persist.vendor.rkpq.loglevel=0
+persist.vendor.rkpq.memc.edge_gain=2
+persist.vendor.rkpq.memc.enable=-1
+persist.vendor.rkpq.memc.scd_th=200
+persist.vendor.rkpq.memc.stp.enable=1
+persist.vendor.rkpq.memc.watermark=0
+persist.vendor.rkpq.mssr.initflag=19
+persist.vendor.rkpq.sr.enable=-1
+persist.vendor.rkpq.watermark_type=0
+persist.vendor.rkpq.dc.enable=-1
+# Sculptor is Rockchip's optional "AI picture quality" post-processing path
+# (super-resolution / MEMC, driven by librkswpq + libsculptor). Stock enables it,
+# but rkpq_init() calls rkauth_activate(), which does an online licence check over
+# a statically linked libcurl -- and the codec2 seccomp policy Rockchip ships
+# (vendor/etc/seccomp_policy/android.hardware.media.c2@1.1-seccomp_policy, which
+# we install byte-identical to stock) permits sendto/recvfrom/setsockopt but not
+# pselect6, so the very first curl_multi_poll() takes a SIGSYS and minijail aborts
+# the whole service:
+#
+#   pid: 509, name: .rk.av1.decoder  >>> android.hardware.media.c2@1.1-service <<<
+#   signal 0 (SIGABRT)
+#   #01 libminijail.so (do_fatal_log+106)
+#   #02 libminijail.so (log_sigsys_handler+38)
+#   #05 libc.so (select+62)
+#   #09 librkswpq.so (curl_easy_perform+194)
+#   #11 librkswpq.so (rkauth_activate3+684)
+#   #15 librkswpq.so (rkpq_init+892)
+#   #27 libcodec2_rk_component.so (SculptorCtrl::initSculptor(int, int)+470)
+#   #28 libcodec2_rk_component.so (android::C2RKMpiDec::process(...)+794)
+#
+# So every hardware decode kills the codec HAL and playback fails. We have no
+# licence for this feature and do not want a media HAL phoning home regardless,
+# so turn it off; decoding itself does not depend on it. Widening the seccomp
+# policy instead would only move the abort to the next blocked syscall -- socket
+# and connect are missing from it too -- and would enable the outbound call.
+persist.vendor.sculptor.c2.mode=0
+persist.vendor.sculptor.enable.fe=0
+persist.vendor.sculptor.mode=0
+
+## Platform
+ro.soc.manufacturer=Rockchip
+ro.soc.model=RK3576
+ro.vendor.rk_sdk=1
+ro.vendor.rkalgo=rkalgo
+
+## Radio (no modem on this board)
+ro.boot.noril=true
+ril.function.dataonly=1
+keyguard.no_require_sim=true
+
+## Recovery
+ro.minui.default_rotation=ROTATION_NONE
+ro.minui.overscan_percent=2
+ro.frp.pst=/dev/block/by-name/frp
+ro.oem_unlock_supported=1
+
+## Storage
+ro.factory.storage_suppntfs=true
+ro.vendor.udisk.visible=true
+external_storage.casefold.enabled=1
+external_storage.projid.enabled=1
+external_storage.sdcardfs.enabled=0
+
+## TEE
+ro.tee.storage=rkss
+
+## Wi-Fi
+wifi.interface=wlan0
+wifi.supplicant_scan_interval=15
+persist.wifi.sleep.delay.ms=0
+ro.wifi.sleep.power.down=true
+
+## Misc
+ro.vendor.frameratelock=true

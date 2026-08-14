@@ -1,0 +1,33 @@
+# Recovery-mode init fragment. init.rc imports /init.recovery.${ro.hardware}.rc
+# and ro.hardware is rk30board on this platform.
+#
+# AOSP's recovery init.rc only drives USB through configfs when sys.usb.configfs
+# is 1, and nothing in AOSP ever sets it -- the stock ROM sets it from this same
+# file. Without it init takes the legacy /sys/class/android_usb path, which this
+# kernel does not implement, so the functionfs mounts fail:
+#
+#     init: Command 'mount functionfs adb /dev/usb-ffs/adb uid=2000,gid=2000'
+#           action=fs took 0ms and failed: mount() failed: No such device
+#
+# and neither adbd nor fastbootd can come up over USB. Only the serial console
+# is reachable.
+#
+# Two things from the stock file are deliberately left out:
+#   - a "console" service: LineageOS' recovery init.rc already defines one, and
+#     a second definition is a parse error.
+#   - "import /system/etc/init/init.recovery.udc.rc", which starts Rockchip's
+#     recovery_udc_detector to publish sys.usb.controller. AOSP init sets that
+#     property itself now, in SetUsbController() (system/core/init/init.cpp).
+
+on early-fs
+    setprop sys.usb.configfs 1
+
+# Windows MS OS descriptors, matching stock. The gadget directories, strings and
+# MaxPower are already created by init.rc's own "on fs" block: imports are
+# parsed after the importing file, so that block runs before this one.
+on fs && property:sys.usb.configfs=1
+    write /config/usb_gadget/g1/bcdDevice 0x0310
+    write /config/usb_gadget/g1/bcdUSB 0x0200
+    write /config/usb_gadget/g1/os_desc/b_vendor_code 0x1
+    write /config/usb_gadget/g1/os_desc/qw_sign "MSFT100"
+    symlink /config/usb_gadget/g1/configs/b.1 /config/usb_gadget/g1/os_desc/b.1

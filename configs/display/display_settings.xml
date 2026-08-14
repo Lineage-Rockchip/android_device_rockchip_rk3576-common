@@ -1,0 +1,16 @@
+<?xml version='1.0' encoding='utf-8' standalone='yes' ?>
+<display-settings>
+<config identifier="0" />
+<display
+  name="local:1"
+  shouldShowSystemDecors="false"
+  shouldShowIme="true"
+  forcedDensity="320"	/>
+<display
+  name="local:0"
+  shouldShowSystemDecors="false"
+  shouldShowIme="true"
+  forcedWidth="1920"
+  forcedHeight="1080"
+  forcedDensity="320"   />
+</display-settings>

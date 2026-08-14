@@ -1,0 +1,4 @@
+# Vendor sepolicy for RK3576.
+# Stock boots permissive (androidboot.selinux=permissive) and that is kept for
+# bring-up, so no rules are required yet. Add .te files here when moving to
+# enforcing.

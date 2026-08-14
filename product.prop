@@ -1,0 +1,8 @@
+## HDMI CEC
+ro.hdmi.cec.source.send_standby_on_sleep=broadcast
+
+## Surfaceflinger
+debug.sf.latch_unsignaled=1
+ro.surface_flinger.max_frame_buffer_acquired_buffers=3
+ro.surface_flinger.has_HDR_display=true
+sf.power.control=2073600

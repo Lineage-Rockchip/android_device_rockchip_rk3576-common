@@ -1,0 +1,7 @@
+## Filesystem
+fs_mgr.overlayfs.prefer_cache_backing_storage=true
+
+## Logging
+ro.logd.kernel=1
+ro.logd.size.stats=64K
+tombstoned.max_tombstone_count=50

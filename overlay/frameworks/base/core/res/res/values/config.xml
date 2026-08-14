@@ -1,0 +1,16 @@
+<?xml version="1.0" encoding="utf-8"?>
+<!--
+     Copyright (C) 2025 The LineageOS Project
+
+     SPDX-License-Identifier: Apache-2.0
+-->
+<resources>
+    <!-- This is an HDMI-attached TV box: no on-screen navigation bar. -->
+    <bool name="config_showNavigationBar">false</bool>
+
+    <!-- Onboard GMAC (stmmac) shows up as eth0. -->
+    <string translatable="false" name="config_ethernet_iface_regex">eth\\d</string>
+
+    <!-- Wi-Fi Display / Miracast is not supported by the stock display stack. -->
+    <bool name="config_enableWifiDisplay">false</bool>
+</resources>

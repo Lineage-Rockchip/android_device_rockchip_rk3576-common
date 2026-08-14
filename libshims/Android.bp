@@ -1,0 +1,21 @@
+//
+// Copyright (C) 2025 The LineageOS Project
+//
+// SPDX-License-Identifier: Apache-2.0
+//
+
+// Shims for symbols the stock RK3576 blobs were built against but which no
+// longer exist in Android 14 as LineageOS ships it. They are attached to the
+// individual blobs with patchelf --add-needed, from blob_fixup() in
+// extract-files.sh, rather than being loaded globally.
+//
+// libui_shim is not defined here: hardware/lineage/compat already provides one
+// carrying exactly the two GraphicBufferMapper entry points the Rockchip camera
+// implementations want, so rk3576.mk just installs libui_shim.vendor.
+
+cc_library_shared {
+    name: "libcrypto_shim",
+    srcs: ["crypto_shim.cpp"],
+    shared_libs: ["libcrypto"],
+    vendor: true,
+}
