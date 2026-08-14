@@ -21,6 +21,26 @@ persist.bluetooth.btsnooplogmode=disable
 persist.bluetooth.showdeviceswithoutnames=false
 vendor.bluetooth.enable_timeout_ms=11000
 
+# Every profile service in packages/modules/Bluetooth is gated on a sysprop that
+# defaults to *false* (Config.java -> <Profile>Service.isEnabled() ->
+# BluetoothProperties.isProfileXEnabled().orElse(false)); only GATT defaults to
+# true. Without these the stack pairs and bonds fine but connects nothing:
+#   BluetoothHidHostService: getHidHostService(): service is null
+#   CachedBluetoothDevice: No profiles. Maybe we will connect later
+# which leaves a BT remote (HOGP, UUID 0x1812) bonded but dead, and TV Settings
+# stuck on "Connecting...". Values follow the stock ROM's product/etc/build.prop.
+bluetooth.profile.a2dp.source.enabled?=true
+bluetooth.profile.asha.central.enabled?=true
+bluetooth.profile.avrcp.target.enabled?=true
+bluetooth.profile.bas.client.enabled?=true
+bluetooth.profile.gatt.enabled?=true
+bluetooth.profile.hfp.ag.enabled?=false
+bluetooth.profile.hid.device.enabled?=true
+bluetooth.profile.hid.host.enabled?=true
+bluetooth.profile.opp.enabled?=true
+bluetooth.profile.pan.nap.enabled?=true
+bluetooth.profile.pan.panu.enabled?=true
+
 ## Dalvik heap
 dalvik.vm.heapstartsize=16m
 dalvik.vm.heapgrowthlimit=192m
