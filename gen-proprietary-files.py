@@ -345,67 +345,101 @@ def collect():
     return sorted(files)
 
 
+# --- Section layout ---
+#
+# Grouped the way device/amlogic/g12-common/proprietary-files.txt is: one section
+# per HAL or service, holding everything that service needs -- its
+# vendor/bin/hw binary, its init .rc, its VINTF manifest fragment and its
+# implementation and support libraries -- instead of one section per directory.
+# That is the view you want when a HAL misbehaves: everything to add, remove or
+# swap for it is in one block.
+#
+# The list is in *match* order, most specific first, because the first pattern
+# that matches a path claims it; a section's own name only has to be more
+# specific than the buckets below it. Sections are printed alphabetically, so
+# match order and reading order are independent. Patterns are case-insensitive
+# and matched with re.search anywhere in the path.
+CATCH_ALL = "Rockchip platform"
+
 SECTIONS = [
-    ("Audio", lambda p: "soundfx" in p or "audio" in p.lower()),
-    ("Bluetooth", lambda p: "bluetooth" in p.lower() or "bt_" in p),
-    ("Camera", lambda p: "camera" in p.lower() or "isp" in p.lower()
-        or "aiq" in p.lower() or p.endswith("media-ctl") or p.endswith("v4l2-ctl")),
-    ("DRM", lambda p: "mediadrm" in p or "mediacas" in p or "drm-service" in p
-        or "widevine" in p.lower() or "cas" in os.path.basename(p).lower()),
-    ("Firmware", lambda p: p.startswith("vendor/etc/firmware/")),
-    ("GPU", lambda p: "mali" in p.lower() or "egl" in p or "vulkan" in p
-        or "gpu" in p.lower()),
-    ("Graphics / HWC", lambda p: "hwc" in p.lower() or "composer" in p.lower()
-        or "allocator" in p.lower() or "mapper" in p.lower() or "gralloc" in p.lower()
-        or "outputmanager" in p.lower() or "hw_output" in p or "rga" in p.lower()),
-    ("Keylayouts", lambda p: p.startswith("vendor/usr/")),
-    ("Media / MPP", lambda p: "mpp" in p.lower() or "rockit" in p.lower()
-        or "codec2" in p.lower() or "media.c2" in p or "vpu" in p.lower()),
-    ("NPU / RKNN models", lambda p: "rknn" in p.lower()),
-    ("Picture quality", lambda p: "pq" in os.path.basename(p).lower()
-        or "sculptor" in p.lower() or "vop_base" in p),
-    ("TEE / Keymaster", lambda p: "optee" in p.lower() or "tee" in p.lower()
-        or "keymaster" in p.lower() or "keymint" in p.lower()
-        or "gatekeeper" in p.lower() or "weaver" in p.lower()
-        or "rkp" in p.lower() or "hdcp" in p.lower()),
-    ("USB", lambda p: "usb" in p.lower()),
-    ("Wi-Fi", lambda p: "wifi" in p.lower() or "wpa" in p.lower()
-        or "hostapd" in p.lower()),
+    # Services and their implementations, most specific first.
+    ("Bluetooth", r"bluetooth|libbt-|bt_vendor|rtkbt|skwbt|rtl8761bt|fmacfw\w*bt"),
+    # libanr.so (audio noise reduction) and libasc_dec.so (VAD / scene
+    # detection) look generic but are audio: audio.primary.rk30board.so is the
+    # only thing that names libanr, and libasc_dec exports ASC_Set_VAD_Parameter.
+    ("Audio", r"audio|alsa|iec958|soundfx|libanr|libasc_dec"),
+    # "(?<!d)isp" so that "display" does not read as ISP, while rkisp, preisp
+    # and ispp still do.
+    ("Camera", r"camera|rkaiq|aiq|(?<!d)isp|media-ctl|v4l2-ctl|rk1608"),
+    ("DRM", r"mediadrm|mediacas|drm-service|widevine|clearkey"),
+    ("HDMI CEC", r"hdmi\.cec|hdmi_cec"),
+    ("HDMI connection", r"hdmi\.connection|hdmi_connection"),
+    ("HDCP", r"hdcp"),
+    # The OP-TEE HALs, split per service the way their binaries are. Each of
+    # these owns its libRk* client libraries too; rkp is remote key
+    # provisioning, which is part of KeyMint.
+    ("Gatekeeper", r"gatekeeper"),
+    # "rkp_factory|_rkp\." rather than a bare "rkp", which also matches rkpq.
+    ("KeyMint", r"keymint|keymaster|secureclock|sharedsecret|cppcose|rkp_factory"
+                r"|_rkp\.|attestation"),
+    ("Weaver", r"weaver"),
+    ("OP-TEE", r"optee|tee-supplicant|libteec"),
+    ("Composer", r"composer|hwc3|hwcomposer"),
+    ("Graphics allocator", r"allocator|graphics\.mapper|gralloc|arm\.graphics"),
+    ("Display output manager", r"outputmanager|hw_output|baseparameter|hdr_params"),
+    ("GPU", r"mali|/egl/|vulkan|gpu"),
+    # Rockchip's fixed-function blocks: 2D blit, image enhancement, JPEG.
+    ("Hardware engines (RGA, IEP, JPEG)", r"librga|libiep|hwjpeg"),
+    # The rkaipq_* models are Sculptor's AI super-resolution networks, so they
+    # sit with the RKNN runtime that executes them rather than with libpq.
+    ("NPU / AI-PQ models", r"rknn"),
+    ("Picture quality", r"pq|sculptor|vop_base|rkauth|libvdpp"),
+    ("Media codec2 / MPP", r"media[._]c2|codec2|libmpp|rockit|vpu"),
+    ("Health", r"health|charger"),
+    ("Lights", r"lights"),
+    ("Power", r"power-aidl|power-service"),
+    ("Thermal", r"thermal"),
+    ("USB", r"usb|udc"),
+    ("Wi-Fi", r"wifi|wpa_|hostapd|supplicant"),
+    ("Vendor storage", r"vendor_storage"),
+    # Buckets for what is left: everything above has already taken its own
+    # firmware, init scripts and seccomp policies.
+    ("Connectivity firmware", r"^vendor/etc/firmware/"),
+    ("Keylayouts", r"^vendor/usr/"),
+    ("seccomp", r"^vendor/etc/seccomp_policy/"),
+    ("Init-files", r"^vendor/etc/(init/|ueventd\.rc$)|fstab|insmod|set_cpu_affinity"
+                   r"|set_performance|tune_io"),
 ]
 
 
 def main():
     files = collect()
     assigned = {}
-    for name, pred in SECTIONS:
+    for name, pattern in SECTIONS:
+        pred = re.compile(pattern, re.IGNORECASE).search
         for f in files:
-            if f in assigned:
-                continue
-            if pred(f):
+            if f not in assigned and pred(f):
                 assigned[f] = name
     out = []
     out.append("## All blobs are from the stock H96 Max M9S firmware")
     out.append("## rk3576_a001_H96_Max_M9S_BTM_ATV-20250314.1513 (Android 14, SDK 34)")
-    out.append("")
+
     def spec(f):
         """Emit "src:dst" when the destination must be renamed, else "src"."""
         dst = RENAME.get(f)
         return "%s:%s" % (f, dst) if dst else f
 
-    for name, _ in SECTIONS:
-        group = [f for f in files if assigned.get(f) == name]
+    names = sorted(set(assigned.values()), key=str.lower)
+    for name in names + [CATCH_ALL]:
+        group = [f for f in files if assigned.get(f, CATCH_ALL) == name]
         if not group:
             continue
+        out.append("")
         out.append("## %s" % name)
         out.extend(spec(f) for f in group)
-        out.append("")
-    rest = [f for f in files if f not in assigned]
-    if rest:
-        out.append("## Rockchip platform")
-        out.extend(spec(f) for f in rest)
-        out.append("")
+    out.append("")
     sys.stdout.write("\n".join(out))
-    sys.stderr.write("total blobs: %d\n" % len(files))
+    sys.stderr.write("total blobs: %d in %d sections\n" % (len(files), len(names) + 1))
 
 
 if __name__ == "__main__":
