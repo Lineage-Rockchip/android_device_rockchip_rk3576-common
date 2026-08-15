@@ -6,13 +6,11 @@
 
 COMMON_PATH := device/rockchip/rk3576-common
 
-# This directory's Android.bp declares a soong_namespace, so anything defined
-# beneath it (libshims/) is invisible until the namespace is imported.
+# libshims/ sits under this directory's soong_namespace.
 PRODUCT_SOONG_NAMESPACES += $(COMMON_PATH)
 
 ## Shipping level
-# Stock is already Android 14 / SDK 34 with an FCM target-level 8 vendor image,
-# so no VNDK back-compat shims are required.
+# Stock is Android 14 / SDK 34 with an FCM target-level 8 vendor image.
 PRODUCT_SHIPPING_API_LEVEL := 34
 PRODUCT_ENFORCE_VINTF_MANIFEST := true
 
@@ -20,9 +18,6 @@ PRODUCT_ENFORCE_VINTF_MANIFEST := true
 $(call inherit-product, $(SRC_TARGET_DIR)/product/core_64_bit.mk)
 
 ## Dynamic partitions
-# Without this, board_config.mk never derives BOARD_SUPER_PARTITION_PARTITION_LIST
-# from BOARD_SUPER_PARTITION_GROUPS, the sub-partitions are not treated as
-# logical, and build_image dies with KeyError: 'partition_size'.
 PRODUCT_USE_DYNAMIC_PARTITIONS := true
 
 PRODUCT_BUILD_SYSTEM_EXT_IMAGE := true
@@ -32,10 +27,14 @@ PRODUCT_BUILD_ODM_DLKM_IMAGE := true
 PRODUCT_BUILD_SYSTEM_DLKM_IMAGE := true
 
 ## Screen density
-# Stock ships ro.sf.lcd_density=213 for a 1080p TV panel.
+# xhdpi (320), not stock's tvdpi (213). It pairs with TARGET_SCREEN_DENSITY in
+# BoardConfigCommon.mk and selects which TvFrameworkOverlay resources apply.
+# Android 16 added values-tvdpi/config.xml to device/google/atv with
+# config_maxUiWidth=1280, which clamps this 1080p panel to 720p; values-xhdpi
+# keeps it at 1920. 320 is also what /vendor/etc/display_settings.xml forces
+# and what LineageOS 21 ran. See BRINGUP-NOTES.md section 7.15.
 PRODUCT_AAPT_CONFIG := xlarge large tvdpi hdpi xhdpi
-PRODUCT_AAPT_PREF_CONFIG := tvdpi
-PRODUCT_PROPERTY_OVERRIDES += ro.sf.lcd_density=213
+PRODUCT_AAPT_PREF_CONFIG := xhdpi
 
 ##
 ## NOTE ON PACKAGE SELECTION
@@ -45,79 +44,37 @@ PRODUCT_PROPERTY_OVERRIDES += ro.sf.lcd_density=213
 ## Only add PRODUCT_PACKAGES entries here for things that are NOT extracted,
 ## otherwise the build fails with duplicate install rules.
 ##
+## extract-files.py emits every blob as a Soong prebuilt carrying its DT_NEEDED
+## entries in shared_libs, and Soong installs those alongside it. So what is
+## left below is only what no *prebuilt* links directly: libraries reached only
+## through a source-built module, or only by dlopen. A missing one shows up at
+## exec time, not at build time. To re-derive: tools/check-vendor-deps.py
+## against the built image (BRINGUP-NOTES.md section 3).
+##
 
-##
-## HAL INTERFACE AND SUPPORT LIBRARIES FOR THE EXTRACTED BLOBS
-##
-## Every HAL on this device is a stock prebuilt, so nothing in the build
-## declares a dependency on the interface libraries they link against and none
-## of them get installed. The blobs then die at exec time with e.g.
-##
-##   CANNOT LINK EXECUTABLE ".../android.hardware.graphics.composer3-service.rockchip":
-##       library "android.hardware.graphics.composer3-V2-ndk.so" not found
-##
-## taking surfaceflinger, keymint, gralloc and the rest of the HALs with them.
-##
-## These are built rather than extracted on purpose. AIDL interface versions are
-## ABI-frozen, so building the exact version a blob was compiled against is
-## equivalent to shipping the stock copy -- and for the plain libraries it is
-## strictly safer: the build already installs its own libcrypto.so, and pairing
-## that with a stock libssl.so from a different BoringSSL drop would be an ABI
-## mismatch. Note the versions differ from what the build otherwise installs
-## (it brings V5 graphics.common, V2 allocator, V4 bluetooth.audio); both
-## versions coexist happily, they are separate files.
-##
-## To re-derive this list after changing the blob set:
-##   readelf -d on every ELF under $(PRODUCT_OUT)/vendor and $(PRODUCT_OUT)/odm,
-##   then subtract vendor/odm lib dirs and system/etc/llndk.libraries.txt.
-
-# Graphics: gralloc (vendor.gralloc-v1) and the Rockchip HWC3 (hwcomposer-3)
+# Codec 2 bufferpool AIDL, reached through the source-built libcodec2_vndk.
 PRODUCT_PACKAGES += \
-    android.hardware.graphics.allocator-V1-ndk.vendor \
-    android.hardware.graphics.common-V4-ndk.vendor \
-    android.hardware.graphics.composer3-V2-ndk.vendor \
-    android.hardware.graphics.composer@2.1-resources.vendor \
-    android.hardware.graphics.composer@2.2-resources.vendor \
-    android.hardware.graphics.composer@2.4.vendor
+    android.hardware.media.bufferpool2-V1-ndk.vendor
 
-# OP-TEE backed security HALs
-PRODUCT_PACKAGES += \
-    android.hardware.gatekeeper-V1-ndk.vendor \
-    android.hardware.security.keymint-V3-ndk.vendor \
-    android.hardware.security.rkp-V3-ndk.vendor \
-    android.hardware.security.sharedsecret-V1-ndk.vendor \
-    android.hardware.weaver-V2-ndk.vendor \
-    libgatekeeper.vendor
-
-# Camera (internal and USB/external Rockchip providers)
-PRODUCT_PACKAGES += \
-    android.hardware.camera.common-V1-ndk.vendor \
-    android.hardware.camera.device-V2-ndk.vendor \
-    android.hardware.camera.provider-V2-ndk.vendor
-
-# Wi-Fi: the stock Rockchip HAL, wpa_supplicant and hostapd
+# The two Wi-Fi blobs carry ;DISABLE_DEPS and declare nothing, so their
+# dependencies cannot be expressed as shared_libs. libcrypto_shim_rk (sk_dup)
+# and libcrypto_shim (CBS_init) are the two shims blob_fixups add to
+# wpa_supplicant's NEEDED; an add_needed() alone installs nothing.
+# libcrypto_shim takes the .vendor suffix because compat's module is
+# system_ext_specific + vendor_available; ours in libshims/ is vendor: true.
 PRODUCT_PACKAGES += \
     android.hardware.wifi-V1-ndk.vendor \
-    android.hardware.wifi.hostapd-V1-ndk.vendor \
     android.hardware.wifi.supplicant-V2-ndk.vendor \
-    libssl.vendor
+    android.system.keystore2-V1-ndk.vendor \
+    libcrypto_shim.vendor \
+    libcrypto_shim_rk \
+    libkeystore-engine-wifi-hidl \
+    libwifi-system-iface.vendor
 
-# Remaining Rockchip HAL services
+# Legacy HIDL interfaces for the camera/bluetooth/audio/tv.input HIDL HALs that
+# stock ships alongside the AIDL ones. These are pulled in by the source-built
+# @x.y-impl wrappers further down, not by a blob.
 PRODUCT_PACKAGES += \
-    android.frameworks.stats-V1-ndk.vendor \
-    android.hardware.health-V2-ndk.vendor \
-    android.hardware.light-V2-ndk.vendor \
-    android.hardware.media.bufferpool2-V1-ndk.vendor \
-    android.hardware.power-V4-ndk.vendor \
-    android.hardware.thermal-V1-ndk.vendor \
-    android.hardware.usb-V1-ndk.vendor \
-    android.hardware.usb.gadget-V1-ndk.vendor
-
-# Legacy HIDL interfaces. Stock ships both the AIDL and the older HIDL HAL for
-# camera, bluetooth, audio and tv.input, and the HIDL halves still need their
-# interface libraries to load.
-PRODUCT_PACKAGES += \
-    android.hardware.bluetooth@1.0.vendor \
     android.hardware.bluetooth.audio@2.0.vendor \
     android.hardware.bluetooth.audio@2.1.vendor \
     android.hardware.camera.common@1.0.vendor \
@@ -129,44 +86,28 @@ PRODUCT_PACKAGES += \
     android.hardware.camera.device@3.6.vendor \
     android.hardware.camera.provider@2.4.vendor \
     android.hardware.keymaster@3.0.vendor \
-    android.hardware.keymaster@4.0.vendor \
-    android.hardware.tv.input@1.0.vendor \
-    android.hidl.allocator@1.0.vendor
+    android.hardware.tv.input@1.0.vendor
 
-# The two legacy camera provider implementations are "proprietary: true", so
-# they install straight to /vendor and take no .vendor suffix -- adding one is
-# rejected as a non-existent module.
+# proprietary: true, so no .vendor suffix.
 PRODUCT_PACKAGES += \
     android.hardware.camera.provider@2.4-external \
     android.hardware.camera.provider@2.4-legacy
 
-# HDMI-CEC and HDMI connection, which matter on a TV box
-PRODUCT_PACKAGES += \
-    android.hardware.tv.hdmi.cec-V1-ndk.vendor \
-    android.hardware.tv.hdmi.connection-V1-ndk.vendor
-
 ##
 ## BLOBS REPLACED BY BUILDS FROM AOSP SOURCE
 ##
-## Everything below used to be extracted. It is all upstream code that the stock
-## ROM shipped unmodified, which was established by authorship rather than by
-## eyeballing: Rockchip's own Android 14 SDK tree at
-## /home/tomin/btrfs-subvolumes/android/edge2-a14 is a full set of git repos, so
-##
-##   git -C $RK/<repo> log --format='%ae %s' -- <module dir> | grep rock-chips.com
-##
-## says whether Rockchip ever touched the directory the blob was built from. The
-## exclusions in gen-proprietary-files.py carry the results, including the five
-## places where that grep did find something and the blob therefore stayed
-## (audio@7.1-impl, bluetooth@1.0, tv.hdmi.{cec,connection}, wifi).
+## Everything below used to be extracted and is upstream code the stock ROM
+## shipped unmodified. Authorship was checked against Rockchip's own Android 14
+## SDK tree; the exclusions in gen-proprietary-files.py carry the results,
+## including the five places where Rockchip had touched the source and the blob
+## therefore stayed (audio@7.1-impl, bluetooth@1.0, tv.hdmi.{cec,connection},
+## wifi).
 ##
 ## Module names take a .vendor suffix when the module is only vendor_available;
-## modules that are already "vendor: true" (the HAL impls, the effects, the
-## libhardware modules) must not have one.
+## modules that are already "vendor: true" must not have one.
 
-# Audio: ALSA helpers, the effect factory and the effects it loads, and the
-# legacy libhardware audio modules. audio.primary.default.so is AOSP's stub HAL;
-# the real one is the audio.primary.rk30board.so blob (ro.hardware=rk30board).
+# Audio: ALSA helpers, the effect factory and its effects, and the legacy
+# libhardware audio modules. The real HAL is the audio.primary.rk30board blob.
 PRODUCT_PACKAGES += \
     android.hardware.audio.effect@7.0-impl \
     audio.primary.default \
@@ -195,8 +136,7 @@ PRODUCT_PACKAGES += \
     audio.bluetooth.default \
     libbluetooth_audio_session
 
-# Codec 2: the plugin store and the two bufferpool libraries that pair with
-# libcodec2_vndk, which is built from source already
+# Codec 2: the plugin store and the two bufferpool libraries
 PRODUCT_PACKAGES += \
     libcodec2_hidl_plugin \
     libstagefright_aidl_bufferpool2.vendor \
@@ -215,20 +155,11 @@ PRODUCT_PACKAGES += \
     camera.device@3.5-impl \
     camera.device@3.6-external-impl
 
-# Graphics. Rockchip's libdrm fork adds a rockchip/ API and drmModeAddFB2_ext,
-# but the stock libdrm.so exports no rockchip_* symbol and none of its 18
-# consumers in the stock image (HWC, gralloc, mapper, libpq, libiep,
-# hw_output) references drmModeAddFB2_ext, so plain AOSP libdrm is enough.
+# Graphics. libdrm is dropped from the blob list too -- nothing in the stock
+# image uses Rockchip's additions to it -- and needs no line, since 18
+# prebuilts name it in NEEDED.
 PRODUCT_PACKAGES += \
-    gralloc.default \
-    libdrm.vendor
-
-# Security support libraries for the OP-TEE keymint/keymaster blobs, plus the
-# keystore engine wpa_supplicant links against
-PRODUCT_PACKAGES += \
-    libcppbor_external.vendor \
-    libkeymaster4support.vendor \
-    libkeystore-engine-wifi-hidl
+    gralloc.default
 
 # ClearKey DRM plugin, to go with android.hardware.drm-service.clearkey below
 PRODUCT_PACKAGES += \
@@ -238,87 +169,39 @@ PRODUCT_PACKAGES += \
 PRODUCT_PACKAGES += \
     android.hardware.tv.input@1.0-impl
 
-# RIL. Nothing loads these -- there is no rild and no radio HAL in the ROM --
-# but stock shipped them and they are three lines of parity.
+# RIL. Nothing loads these -- there is no rild and no radio HAL -- but stock
+# shipped them.
 PRODUCT_PACKAGES += \
     libreference-ril \
     libril \
     librilutils
 
-# Plain utility libraries the blobs link against. libtinyalsav2 (above) is the
-# one that moves the check-vendor-deps.py baseline: the stock blob was built
-# with UBSan and wanted libclang_rt.ubsan_standalone-*, which the ROM does not
-# ship; ours is not.
+# Plain utility libraries reached by dlopen or through a source-built module
 PRODUCT_PACKAGES += \
     libbinderdebug.vendor \
-    libmediautils_vendor.vendor \
-    libmemunreachable.vendor \
     libz_stable.vendor \
     local_time.default
 
-# vndservicemanager. The stock ROM ships vendor/etc/init/vndservicemanager.rc and
-# the vendor HIDL HALs do use /dev/binderfs/vndbinder, but the binary was in
-# gen-proprietary-files.py's EXCLUDE_BINS and nothing in the product built it, so
-# every boot ended up with
-#
-#   init: Could not start shutdown critical service 'vndservicemanager':
-#         Cannot find '/vendor/bin/vndservicemanager'
-#
-# The module installs the identical .rc itself and pulls in vndservice.
+# vndservicemanager. Stock ships the .rc but the binary was excluded, so every
+# boot failed to start this shutdown-critical service. The module installs the
+# identical .rc itself.
 PRODUCT_PACKAGES += \
     vndservicemanager
 
-## Shims
-# Attached to individual blobs by blob_fixup() in extract-files.sh, which
-# patchelf --add-needed's them. libui_shim comes from hardware/lineage/compat.
-PRODUCT_PACKAGES += \
-    libcrypto_shim \
-    libui_shim.vendor
-
-# Plain support libraries the blobs link against
-PRODUCT_PACKAGES += \
-    android.system.keystore2-V1-ndk.vendor \
-    libaudioroute.vendor \
-    libavservices_minijail.vendor \
-    libbinder.vendor \
-    libcamera_metadata.vendor \
-    libchrome.vendor \
-    libexif.vendor \
-    libexpat.vendor \
-    libnetutils.vendor \
-    libnl.vendor \
-    libpng.vendor \
-    libprocessgroup.vendor \
-    libutilscallstack.vendor \
-    libwifi-system-iface.vendor \
-    libxml2.vendor
-
 ## Audio
-# The audio HAL itself (android.hardware.audio.service + impl .so) is extracted;
-# only the HIDL interface libraries need building.
+# The HAL itself is extracted; only the HIDL interface libraries the impl blob
+# does not name in NEEDED are built here.
 PRODUCT_PACKAGES += \
-    android.hardware.audio@7.1.vendor \
-    android.hardware.audio@7.1-util.vendor \
     android.hardware.audio.common@2.0.vendor \
     android.hardware.audio.common@5.0.vendor \
     android.hardware.audio.common@7.0-util.vendor \
-    android.hardware.audio.common@7.1-enums.vendor \
-    android.hardware.audio.common@7.1-util.vendor \
-    android.hardware.audio.common-util.vendor \
     android.hardware.audio.effect@7.0.vendor \
     android.hardware.audio.effect@7.0-util.vendor
 
-# Bluetooth audio: audiohalservice dlopens android.hardware.bluetooth.audio-impl.so
-# and createIBluetoothAudioProviderFactory() from it. The stock blob is excluded by
-# gen-proprietary-files.py's AOSP-prefix rule, so build AOSP's module -- it carries
-# its own bluetooth_audio.xml VINTF fragment and pulls in
-# libbluetooth_audio_session_aidl, both of which replace the stock copies.
-#
-# This tree's latest bluetooth.audio AIDL is V4 while the stock blobs were built
-# against V3. The last thing that still needed V3 was the stock
-# vendor/lib{,64}/hw/audio.bluetooth.default.so, and that is now built from source
-# too (see the FROM AOSP SOURCE block below), so the whole BT audio stack is V4 and
-# android.hardware.bluetooth.audio-V3-ndk.vendor is gone from the list above.
+# audiohalservice dlopens android.hardware.bluetooth.audio-impl.so. AOSP's
+# module carries its own VINTF fragment and libbluetooth_audio_session_aidl.
+# The whole BT audio stack is on V4 now that audio.bluetooth.default is built
+# from source too.
 PRODUCT_PACKAGES += \
     android.hardware.bluetooth.audio-impl
 
@@ -335,12 +218,9 @@ PRODUCT_COPY_FILES += \
 
 ## Codec 2
 # libcodec2_rk_{store,component}.so and libcodec2_hidl_plugin.so are extracted;
-# the AOSP framework halves they link against are built here.
+# these are the AOSP halves no blob names in NEEDED.
 PRODUCT_PACKAGES += \
-    libcodec2_hidl@1.2.vendor \
-    libcodec2_vndk.vendor \
     libcodec2_soft_common.vendor \
-    libsfplugin_ccodec_utils.vendor \
     libstagefright_bufferpool@2.0.vendor
 
 PRODUCT_COPY_FILES += \
@@ -350,14 +230,8 @@ PRODUCT_COPY_FILES += \
     $(COMMON_PATH)/configs/media/media_codecs_performance.xml:$(TARGET_COPY_OUT_VENDOR)/etc/media_codecs_performance.xml \
     $(COMMON_PATH)/configs/media/media_profiles_V1_0.xml:$(TARGET_COPY_OUT_VENDOR)/etc/media_profiles_V1_0.xml
 
-## Camera
-PRODUCT_PACKAGES += \
-    libyuv.vendor
-
 ## DRM
-# ClearKey is built from AOSP source rather than extracted. CAS is dropped
-# entirely: stock only shipped AOSP's cas-service.example, which in Android 14
-# lives inside the com.android.hardware.cas APEX.
+# ClearKey is built from source; CAS is dropped (it lives in an APEX now).
 PRODUCT_PACKAGES += \
     android.hardware.drm-service.clearkey
 
@@ -368,70 +242,51 @@ PRODUCT_COPY_FILES += \
     $(COMMON_PATH)/configs/display/package_uimode_config.xml:$(TARGET_COPY_OUT_VENDOR)/etc/package_uimode_config.xml
 
 ## Cgroups
+# The vendor task profiles are AOSP's API-28 set, which is what stock ships.
+# The matching cgroups_28.json is not usable as-is: it declares schedtune
+# without "Optional", no Rockchip kernel has CONFIG_SCHED_TUNE, and under
+# Android 16 that one failure aborts SetupCgroups and the whole boot. The local
+# copy adds "Optional": true, as the stock vendor image does.
 PRODUCT_COPY_FILES += \
-    system/core/libprocessgroup/profiles/cgroups_28.json:$(TARGET_COPY_OUT_VENDOR)/etc/cgroups.json \
+    $(COMMON_PATH)/configs/cgroups.json:$(TARGET_COPY_OUT_VENDOR)/etc/cgroups.json \
     system/core/libprocessgroup/profiles/task_profiles_28.json:$(TARGET_COPY_OUT_VENDOR)/etc/task_profiles.json
 
 ## fstab
-# androidboot.hardware=rk30board, so the fstab keeps that suffix. It is needed
-# in the first-stage ramdisk and on /vendor for second stage.
+# Needed in the first-stage ramdisk and on /vendor for second stage.
 PRODUCT_COPY_FILES += \
     $(COMMON_PATH)/init-files/fstab.rk30board:$(TARGET_COPY_OUT_RAMDISK)/fstab.rk30board \
     $(COMMON_PATH)/init-files/fstab.rk30board:$(TARGET_COPY_OUT_VENDOR)/etc/fstab.rk30board
 
 ## Recovery init
-# Switches recovery's USB gadget to configfs, without which the functionfs
-# mounts fail and neither adb nor fastbootd work over USB. See the file itself.
+# Switches recovery's USB gadget to configfs, without which neither adb nor
+# fastbootd work over USB. See the file itself.
 PRODUCT_COPY_FILES += \
     $(COMMON_PATH)/init-files/init.recovery.rk30board.rc:$(TARGET_COPY_OUT_RECOVERY)/root/init.recovery.rk30board.rc
 
 ## fastbootd
-# init.rc declares "service fastbootd /system/bin/fastbootd" unconditionally,
-# but the binary is only installed when the product asks for it. Without these,
-# picking "Enter fastboot" in recovery tears the adb gadget down and then
-# nothing replaces it: no adb, no fastboot, and a device that looks hung.
+# init.rc declares the service unconditionally but the binary is only installed
+# when the product asks for it. The example_recovery IFastboot is enough to
+# flash logical partitions.
 #
-# fastbootd also needs IFastboot. Stock shipped Rockchip's own
-# android.hardware.fastboot-service.rockchip_recovery in the recovery ramdisk;
-# this is the AOSP equivalent, which is enough to flash logical partitions.
-# Both modules are "recovery: true", so PRODUCT_PACKAGES puts them in the
-# recovery ramdisk rather than on /system.
-#
-# Deliberately NO android.hardware.boot-service.default_recovery. It is backed
-# by libboot_control, which needs A/B slots, and this device is not A/B:
-#
-#   android.hardware.boot-service.default_recovery: Slot suffix property is not set
-#   android.hardware.boot-service.default_recovery: Check failed: impl_.Init()
-#
-# The HAL aborts, init respawns it once a second forever, and fastbootd never
-# finishes starting -- BootControlClient::WaitForService() blocks in
-# AServiceManager_waitForService() precisely because installing the HAL is what
-# declares the interface in the recovery VINTF manifest. Leave it out and the
-# preceding AServiceManager_isDeclared() check fails, boot_control_hal_ stays
-# null, and fastbootd carries on; fastboot_device.cpp spells this out at the
-# null check: "Non-A/B devices must not have boot control HALs."
-#
-# The stock recovery shipped it anyway (its manifest has
-# android.hardware.boot-service.default.xml), which is presumably why fastbootd
-# never worked on the stock ROM either.
+# Deliberately NO android.hardware.boot-service.default_recovery: it needs A/B
+# slots, and installing it is what declares the interface, so fastbootd would
+# then block forever waiting for a HAL that aborts on every respawn.
 PRODUCT_PACKAGES += \
     fastbootd \
     android.hardware.fastboot-service.example_recovery
 
-## Memory allocators used by the Rockchip media/graphics blobs
+## Memory allocators for the Rockchip media/graphics blobs. libdmabufheap
+## needs no line -- seven prebuilts name it in NEEDED.
 PRODUCT_PACKAGES += \
-    libion \
-    libdmabufheap
+    libion
 
 ## Wi-Fi
-# The Wi-Fi HAL, wpa_supplicant and hostapd all come from the stock vendor
-# image (Rockchip multiplexes AIC8800 / Broadcom / Realtek / SeasonChip via
-# libwifi-hal.so + librkwifi-ctrl.so). Only the system-side daemon is built.
+# HAL, wpa_supplicant and hostapd all come from stock; only the system-side
+# daemon is built.
 PRODUCT_PACKAGES += \
     wificond
 
 ## Permissions
-# Hardware feature declarations, copied from AOSP rather than extracted.
 PRODUCT_COPY_FILES += \
     frameworks/native/data/etc/android.hardware.bluetooth.xml:$(TARGET_COPY_OUT_VENDOR)/etc/permissions/android.hardware.bluetooth.xml \
     frameworks/native/data/etc/android.hardware.bluetooth_le.xml:$(TARGET_COPY_OUT_VENDOR)/etc/permissions/android.hardware.bluetooth_le.xml \

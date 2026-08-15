@@ -15,12 +15,21 @@
 
 <Included>
     <Decoders>
+        <!--
+            BRING-UP ONLY - restore once the AVC overflow is fixed. Listing the
+            component is the only lever this file has: system_server aborts on
+            'ubsan: mul-overflow' in VideoCapabilities::applyLevelLimits() while
+            building the codec list, which loops the boot animation. Costs
+            hardware H.264 decode. BRINGUP-NOTES.md section 7.14 has the
+            analysis and the two-line frameworks/av fix.
+        -->
+        <!--
         <MediaCodec name="c2.rk.avc.decoder" type="video/avc">
             <Alias name="OMX.rk.video_decoder.avc" />
             <Limit name="size" min="64x64" max="4096x2160" />
             <Limit name="alignment" value="2x2" />
             <Limit name="block-size" value="16x16" />
-            <Limit name="block-count" range="1-32768" /> <!-- max 4096x2160 -->
+            <Limit name="block-count" range="1-32768" />
             <Limit name="blocks-per-second" range="1-1966080" />
             <Limit name="frame-rate" range="1-60" />
             <Limit name="bitrate" range="1-20000000" />
@@ -28,6 +37,8 @@
             <Limit name="concurrent-instances" max="32" />
             <Limit name="performance-point-3840x2160" value="60" />
         </MediaCodec>
+        -->
+
         <MediaCodec name="c2.rk.hevc.decoder" type="video/hevc">
             <Alias name="OMX.rk.video_decoder.hevc" />
             <Limit name="size" min="64x64" max="4096x2160" />

@@ -1,6 +1,6 @@
 # device/rockchip/rk3576-common
 
-Shared LineageOS 21 tree for Rockchip RK3576 Android TV boxes.
+Shared LineageOS 23.2 tree for Rockchip RK3576 Android TV boxes.
 
 It is modelled on `device/amlogic/ne-common`: this directory holds everything
 tied to the SoC, and a thin per-board tree (for example `device/h96/m9s`)
@@ -8,16 +8,17 @@ inherits from it.
 
 ## Kernel
 
-Nothing is built from source. The stock BSP kernel (6.1.75, non-GKI) is reused
-verbatim from the stock `boot.img`, staged under `kernel/rockchip/rk3576`:
+The kernel is built from source: Rockchip's Android BSP 6.1.99, with the device
+tree on the `rk3576-m9s` branch of the `rk-linux-6.1` tree. The prebuilt staging
+area under `kernel/rockchip/rk3576` is still how the result reaches the build:
 
 | File | Origin |
 | --- | --- |
-| `Image` | stock `boot.img` kernel |
-| `dtb/rk3576-m9s.dtb` | stock `boot.img` appended dtb |
-| `resource.img` | stock `boot.img` "second" area (Rockchip `RSCE`) |
+| `Image` | built from source (6.1.99) |
+| `dtb/rk3576-m9s.dtb` | built from source; reproduces the stock dtb |
+| `resource.img` | repacked, stock `boot.img` "second" area (Rockchip `RSCE`) |
 | `dtbo.img` | stock `dtbo.img` (a single empty overlay) |
-| `lib/modules/*.ko` | stock `vendor_dlkm` |
+| `lib/modules/*.ko` | built from source, `INSTALL_MOD_STRIP=1` |
 
 `TARGET_NO_KERNEL_OVERRIDE := true` disables LineageOS' kernel build task and
 the image is supplied through `PRODUCT_COPY_FILES ... :kernel`.
@@ -37,9 +38,40 @@ Regenerate with:
 
     python3 gen-proprietary-files.py > proprietary-files.txt
 
-Extract with:
+Extract with the board tree's script, which pulls in this common tree too:
 
-    ./../../h96/m9s/extract-files.sh /path/to/stock/dump
+    cd ../../h96/m9s && ./extract-files.py /path/to/stock/dump
+
+`extract-files.py` uses `tools/extract-utils` (the Python one; the shell
+`extract_utils.sh` is gone as of LineageOS 22). `./setup-makefiles.py` is the
+same script with `--regenerate_makefiles`: it rewrites `vendor/…` from the
+blobs already extracted, without touching the dump. Useful flags:
+`--only-common`, `--only-target`, `-s <section>`, `-n` (keep `vendor/`).
+
+Note that the Python extract-utils turns every ELF under `bin/`, `lib/` and
+`lib64/` into a Soong prebuilt module with `check_elf_files: true`, instead of
+a plain `PRODUCT_COPY_FILES` entry. Unresolved `DT_NEEDED` entries are
+therefore build errors now, and are fixed with `blob_fixup()` chains
+(`.replace_needed()`, `.add_needed()`) in `extract-files.py`.
+
+## Blobs against a newer platform
+
+The vendor image is Android 14 and the platform is Android 16, and **VNDK was
+removed in Android 15** -- a blob no longer links a frozen snapshot of the C++
+platform libraries, it links whatever the tree builds today. Symbol names do not
+change, so `check_elf_files` passes and the failure is a bare SIGSEGV or SIGABRT
+at runtime.
+
+Two things exist for this. `tools/check-vendor-vtables.py` finds it, by comparing
+`_ZTV*` sizes against the stock ROM and reporting only libraries a blob actually
+links. `hardware/lineage/compat/vndk/` fixes it, with prebuilt VNDK snapshots
+under versioned names (`libbase-v33`, `libcrypto-v33`, `libui-v34`, ...) that a
+blob is pointed at with `.replace_needed('libbase.so', 'libbase-v33.so')`. Add
+new snapshots with that repo's `vndk/copy_libs.py`.
+
+Migrate a whole *process* at once, never half of one: two copies of libcrypto or
+libui in one address space, with objects crossing between them, is worse than
+either version alone.
 
 ## Verified boot
 

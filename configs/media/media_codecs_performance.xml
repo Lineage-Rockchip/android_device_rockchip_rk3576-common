@@ -101,6 +101,10 @@
             <Limit name="measured-frame-rate-1280x720" range="60-70" />
         </MediaCodec>
         <!-- Hardware Video Decoders-->
+        <!--
+            BRING-UP ONLY - restore together with the c2.rk.avc.decoder block in
+            media_codecs_c2_base.xml, which explains why it is out.
+
         <MediaCodec name="c2.rk.avc.decoder" type="video/avc" update="true">
             <Limit name="measured-frame-rate-320x240" range="600-650" />
             <Limit name="measured-frame-rate-720x480" range="550-640" />
@@ -108,6 +112,7 @@
             <Limit name="measured-frame-rate-1920x1080" range="130-140" />
             <Limit name="measured-frame-rate-3840x2160" range="30-30" />
         </MediaCodec>
+        -->
         <MediaCodec name="c2.rk.hevc.decoder" type="video/hevc" update="true">
             <Limit name="measured-frame-rate-352x288" range="670-690" />
             <Limit name="measured-frame-rate-640x360" range="650-670" />

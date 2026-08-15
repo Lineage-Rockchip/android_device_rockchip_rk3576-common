@@ -3,7 +3,7 @@
 
 ## Audio
 vendor/bin/hw/android.hardware.audio.service
-vendor/etc/init/android.hardware.audio.service.rc
+vendor/etc/init/android.hardware.audio.service.rc:vendor/etc/init/rk_audio.service.rc
 vendor/lib/hw/android.hardware.audio@7.1-impl.so
 vendor/lib/hw/audio.primary.rk30board.so
 vendor/lib/hw/libanr.so
@@ -29,7 +29,7 @@ vendor/etc/firmware/fmacfwbt_8800d80_u02.bin
 vendor/etc/firmware/rtl8761bt_config
 vendor/etc/firmware/rtl8761bt_config_vendor
 vendor/etc/firmware/rtl8761bt_fw
-vendor/etc/init/android.hardware.bluetooth@1.0-service.rc
+vendor/etc/init/android.hardware.bluetooth@1.0-service.rc:vendor/etc/init/rk_bluetooth@1.0-service.rc
 vendor/lib/hw/android.hardware.bluetooth@1.0-impl.so
 vendor/lib/libbt-vendor-aic.so
 vendor/lib/libbt-vendor-realtek.so
@@ -484,7 +484,7 @@ vendor/lib64/libRkTeeGatekeeper.so
 vendor/lib64/libRkgatekeeper.so
 
 ## GPU
-vendor/bin/gpu_counter_producer
+vendor/bin/gpu_counter_producer;MODULE_SUFFIX=-rockchip
 vendor/lib/egl/libGLES_mali.so
 vendor/lib/hw/vulkan.rk3576.so
 vendor/lib/libgpudataproducer.so
@@ -521,25 +521,21 @@ vendor/etc/init/init.hdcp2-host.rc
 
 ## HDMI CEC
 vendor/bin/hw/android.hardware.tv.hdmi.cec-service
-vendor/etc/init/android.hardware.tv.hdmi.cec-service.rc
-vendor/etc/vintf/manifest/android.hardware.tv.hdmi.cec-service.xml
+vendor/etc/init/android.hardware.tv.hdmi.cec-service.rc:vendor/etc/init/rk_hdmi.cec-service.rc
+vendor/etc/vintf/manifest/android.hardware.tv.hdmi.cec-service.xml:vendor/etc/vintf/manifest/rk_hdmi.cec.xml
 vendor/lib/hw/hdmi_cec.rk30board.so
 vendor/lib64/hw/hdmi_cec.rk30board.so
 
 ## HDMI connection
 vendor/bin/hw/android.hardware.tv.hdmi.connection-service
-vendor/etc/init/android.hardware.tv.hdmi.connection-service.rc
-vendor/etc/vintf/manifest/android.hardware.tv.hdmi.connection-service.xml
+vendor/etc/init/android.hardware.tv.hdmi.connection-service.rc:vendor/etc/init/rk_hdmi.connection-service.rc
+vendor/etc/vintf/manifest/android.hardware.tv.hdmi.connection-service.xml:vendor/etc/vintf/manifest/rk_hdmi.connection.xml
 vendor/lib/hw/hdmi_connection.rk30board.so
 vendor/lib64/hw/hdmi_connection.rk30board.so
 
 ## Health
 vendor/bin/hw/android.hardware.health-service.rockchip
 vendor/etc/init/android.hardware.health-service.rockchip.rc
-vendor/etc/res/images/charger/battery_fail.png
-vendor/etc/res/images/charger/battery_scale.png
-vendor/etc/res/images/charger/font.png
-vendor/etc/res/values/charger/animation.txt
 vendor/etc/vintf/manifest/android.hardware.health-service.rockchip.xml
 
 ## Init-files
@@ -570,7 +566,6 @@ vendor/usr/keylayout/CMIOT_REMOTE.kl
 vendor/usr/keylayout/HiRemote.idc
 vendor/usr/keylayout/HiRemote.kl
 vendor/usr/keylayout/Vendor_0416_Product_0300.kl
-vendor/usr/keylayout/Vendor_0508_Product_0110.kl
 vendor/usr/keylayout/fd8b0030_pwm.idc
 vendor/usr/keylayout/fd8b0030_pwm.kl
 vendor/usr/keylayout/fe6e0030_pwm.idc
@@ -730,18 +725,18 @@ vendor/lib64/libRkTeeWeaver.so
 vendor/lib64/libRkWeaver.so
 
 ## Wi-Fi
-vendor/bin/hw/android.hardware.wifi-service
-vendor/bin/hw/hostapd
-vendor/bin/hw/wpa_supplicant
+vendor/bin/hw/android.hardware.wifi-service;DISABLE_DEPS
+vendor/bin/hw/hostapd;MODULE_SUFFIX=-rockchip
+vendor/bin/hw/wpa_supplicant;DISABLE_DEPS
 vendor/etc/firmware/ssv6051-wifi.cfg
 vendor/etc/firmware/wifi_efuse_8189e.map
 vendor/etc/firmware/wifi_efuse_8723bs-vq0.map
 vendor/etc/firmware/wifi_efuse_8723cs.map
 vendor/etc/firmware/wifi_efuse_8723ds.map
 vendor/etc/firmware/wifi_efuse_8821cs.map
-vendor/etc/init/android.hardware.wifi-service.rc
+vendor/etc/init/android.hardware.wifi-service.rc:vendor/etc/init/rk_wifi.service.rc
 vendor/etc/init/hostapd.android.rc
-vendor/etc/vintf/manifest/android.hardware.wifi-service.xml
+vendor/etc/vintf/manifest/android.hardware.wifi-service.xml:vendor/etc/vintf/manifest/rk_wifi.service.xml
 vendor/etc/vintf/manifest/android.hardware.wifi.hostapd.xml:vendor/etc/vintf/manifest/rk_wifi.hostapd.xml
 vendor/etc/vintf/manifest/android.hardware.wifi.supplicant.xml:vendor/etc/vintf/manifest/rk_wifi.supplicant.xml
 vendor/etc/wifi/p2p_supplicant_overlay.conf
@@ -753,18 +748,18 @@ vendor/etc/wifi/wpa_supplicant.conf
 vendor/etc/wifi/wpa_supplicant_overlay.conf
 vendor/etc/wifi/wpa_supplicant_rtk.conf
 vendor/lib/librkwifi-ctrl.so
-vendor/lib/libwifi-hal-aic.so
-vendor/lib/libwifi-hal-bcm.so
-vendor/lib/libwifi-hal-bes.so
-vendor/lib/libwifi-hal-rtk.so
-vendor/lib/libwifi-hal-skw.so
+vendor/lib/libwifi-hal-aic.so;MODULE_SUFFIX=-rockchip
+vendor/lib/libwifi-hal-bcm.so;MODULE_SUFFIX=-rockchip
+vendor/lib/libwifi-hal-bes.so;MODULE_SUFFIX=-rockchip
+vendor/lib/libwifi-hal-rtk.so;MODULE_SUFFIX=-rockchip
+vendor/lib/libwifi-hal-skw.so;MODULE_SUFFIX=-rockchip
 vendor/lib/libwpa_client.so
 vendor/lib64/librkwifi-ctrl.so
-vendor/lib64/libwifi-hal-aic.so
-vendor/lib64/libwifi-hal-bcm.so
-vendor/lib64/libwifi-hal-bes.so
-vendor/lib64/libwifi-hal-rtk.so
-vendor/lib64/libwifi-hal-skw.so
+vendor/lib64/libwifi-hal-aic.so;MODULE_SUFFIX=-rockchip
+vendor/lib64/libwifi-hal-bcm.so;MODULE_SUFFIX=-rockchip
+vendor/lib64/libwifi-hal-bes.so;MODULE_SUFFIX=-rockchip
+vendor/lib64/libwifi-hal-rtk.so;MODULE_SUFFIX=-rockchip
+vendor/lib64/libwifi-hal-skw.so;MODULE_SUFFIX=-rockchip
 vendor/lib64/libwifi-hal.so
 vendor/lib64/libwpa_client.so
 
@@ -781,4 +776,5 @@ vendor/etc/public.libraries.txt
 vendor/etc/rockchip_forbid_packages.xml
 vendor/etc/session.xml
 vendor/lib/libsync_vendor.so
+vendor/lib64/libcppbor_external.so:vendor/lib64/libcppbor_external_rk.so;FIX_SONAME
 vendor/lib64/libsync_vendor.so
