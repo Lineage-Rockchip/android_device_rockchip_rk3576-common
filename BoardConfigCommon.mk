@@ -6,8 +6,13 @@
 
 COMMON_PATH := device/rockchip/rk3576-common
 
-# Prebuilt kernel artifacts pulled out of the stock boot.img
-KERNEL_PATH := kernel/rockchip/rk3576
+# Artifacts still taken from the stock boot.img: dtbo.img, and the boot logo and
+# battery bitmaps that resource.img is repacked around. Everything else is built
+# from source -- see the Kernel section below.
+#
+# Deliberately not called KERNEL_PATH: vendor/lineage/config/BoardConfigKernel.mk
+# claims that name for itself when TARGET_KERNEL_PLATFORM_TARGET is set.
+KERNEL_PREBUILT_PATH := kernel/rockchip/rk3576
 
 ## Platform
 TARGET_BOARD_PLATFORM := rk3576
@@ -37,13 +42,24 @@ TARGET_NO_BOOTLOADER := false
 TARGET_BOOTLOADER_BOARD_NAME := rk30board
 
 ## Kernel
-# Stock BSP kernel 6.1.75 (non-GKI), used as-is.
+# Built from source out of kernel/rockchip/kernel-6.1, which is Khadas' RK3576
+# BSP tree (linux 6.1.141, non-GKI) -- the same source the Edge-2L RKR8 blobs
+# were built against, so the in-kernel Mali matches libGLES_mali. The stock
+# 6.1.75 prebuilt it replaces is still in kernel/rockchip/rk3576 for reference.
 TARGET_NO_KERNEL := false
-TARGET_NO_KERNEL_OVERRIDE := true
-TARGET_KERNEL_VERSION := 6.1
+TARGET_KERNEL_SOURCE := kernel/rockchip/kernel-6.1
 
-PRODUCT_COPY_FILES += \
-    $(KERNEL_PATH)/Image:kernel
+# rockchip_defconfig is the base; the rest are fragments merged in this order.
+# rk3576_m9s.config carries the deltas that make the result match the stock
+# config, and is board-independent (the M9 and M9S are the same board).
+# The paths are spelled out rather than using TARGET_KERNEL_CONFIG for the
+# fragments because android-14.config does not live in arch/arm64/configs, and
+# because ALL_KERNEL_DEFCONFIG_SRCS puts TARGET_KERNEL_CONFIG_EXT last.
+TARGET_KERNEL_CONFIG := rockchip_defconfig
+TARGET_KERNEL_CONFIG_EXT := \
+    $(TARGET_KERNEL_SOURCE)/kernel/configs/android-14.config \
+    $(TARGET_KERNEL_SOURCE)/arch/arm64/configs/rk3576.config \
+    $(TARGET_KERNEL_SOURCE)/arch/arm64/configs/rk3576_m9s.config
 
 BOARD_KERNEL_IMAGE_NAME := Image
 
@@ -86,21 +102,50 @@ BOARD_KERNEL_CMDLINE += androidboot.selinux=permissive
 
 ## DTB / DTBO
 # The device tree is appended to boot.img rather than shipped in a vendor_boot.
+# BOARD_PREBUILT_DTBIMAGE_DIR is deliberately unset: the dtb is built with the
+# kernel now. dtb.img is exactly one dtb, named per board as TARGET_DTB_NAME --
+# which is how the M9 and the M9S pick their own IR key tables off a shared
+# board dtsi -- and build/tasks/dtbimage.mk copies it into place.
 BOARD_INCLUDE_DTB_IN_BOOTIMG := true
-BOARD_PREBUILT_DTBIMAGE_DIR := $(KERNEL_PATH)/dtb
 
-# Stock dtbo.img holds a single empty overlay.
-BOARD_PREBUILT_DTBOIMAGE := $(KERNEL_PATH)/dtbo.img
+# Switches off kernel.mk's own, competing dtb.img rule. See the file.
+BOARD_CUSTOM_DTBIMG_MK := $(COMMON_PATH)/build/no-dtbimage.mk
+
+# Stock dtbo.img holds a single empty overlay; nothing in the tree overlays.
+BOARD_PREBUILT_DTBOIMAGE := $(KERNEL_PREBUILT_PATH)/dtbo.img
 
 ## Rockchip resource.img
 # RSCE (logo/battery bitmaps + rk-kernel.dtb), passed to mkbootimg as --second.
+#
+# rk-kernel.dtb inside it is the copy U-Boot actually reads, so it has to be
+# repacked around the freshly built dtb on every build or the board runs a new
+# kernel against an old device tree. Android.mk does that; the stock image is
+# only the source of the bitmaps, which are not built from source.
 TARGET_BOOTLOADER_IS_2ND := true
-TARGET_PREBUILT_RESOURCE_IMAGE := $(KERNEL_PATH)/resource.img
+TARGET_STOCK_RESOURCE_IMAGE := $(KERNEL_PREBUILT_PATH)/resource.img
 
 ## Kernel modules
-# All stock modules live in vendor_dlkm; odm_dlkm and system_dlkm ship empty.
-BOARD_VENDOR_KERNEL_MODULES := $(wildcard $(KERNEL_PATH)/lib/modules/*.ko)
-BOARD_VENDOR_KERNEL_MODULES_LOAD := $(strip $(shell cat $(KERNEL_PATH)/vendor_dlkm.modules.load 2>/dev/null))
+# Built with the kernel and installed by kernel.mk; all of them live in
+# vendor_dlkm, and odm_dlkm and system_dlkm ship empty. BOARD_VENDOR_KERNEL_MODULES
+# is for prebuilt .ko files and stays unset.
+#
+# The AIC8800 WiFi/BT driver is not in the kernel tree -- Rockchip ships it in
+# external/wifi_driver, mirrored here as kernel/rockchip/kernel-modules/wifi --
+# so it is built as an out-of-tree module the way device/amlogic/g12-common
+# builds mali and media. The ":kbuild" suffix picks make-kbuild-module-target,
+# i.e. a plain "make -C <kernel> M=<module dir>"; the driver's own Makefile is
+# not a wrapper that could drive the build itself.
+TARGET_KERNEL_EXT_MODULE_ROOT := kernel/rockchip/kernel-modules
+TARGET_KERNEL_EXT_MODULES += wifi/aic8800:kbuild
+
+# Load order matters: aic8800_bsp claims the SDIO WLAN function and downloads
+# firmware, and both aic8800_fdrv and aic8800_btlpm depend on it.
+BOARD_VENDOR_KERNEL_MODULES_LOAD := \
+    r8168.ko \
+    realtek.ko \
+    aic8800_bsp.ko \
+    aic8800_fdrv.ko \
+    aic8800_btlpm.ko
 
 ## Verified Boot
 # Stock ships a completely unsigned vbmeta. Keep it that way.

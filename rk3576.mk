@@ -324,6 +324,15 @@ PRODUCT_COPY_FILES += \
     $(COMMON_PATH)/init-files/init.connectivity.rc:$(TARGET_COPY_OUT_VENDOR)/etc/init/hw/init.connectivity.rc \
     $(COMMON_PATH)/init-files/init.rk3576.rc:$(TARGET_COPY_OUT_VENDOR)/etc/init/hw/init.rk3576.rc
 
+## Boot-time kernel modules
+# The stock init.insmod.sh only recognises modules.load entries that carry a .ko
+# suffix, and kernel.mk writes bare module names, so that list loads nothing at
+# all. This cfg is the same script's second pass and takes full paths; the dump
+# ships no copy of it, so this is a pure addition rather than a forked blob.
+# See the header of the file.
+PRODUCT_COPY_FILES += \
+    $(COMMON_PATH)/init-files/init.insmod.cfg:$(TARGET_COPY_OUT_VENDOR)/etc/init.insmod.cfg
+
 ## AIC8800 Bluetooth firmware, from the M9S RKR5 dump
 # The Edge-2L does not use an AIC8800 for Bluetooth, so its ROM ships none of
 # these and the blob list cannot carry them. Kept here rather than in

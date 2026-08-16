@@ -8,24 +8,44 @@ inherits from it.
 
 ## Kernel
 
-The kernel is built from source: Rockchip's Android BSP 6.1.99, with the device
-tree on the `rk3576-m9s` branch of the `rk-linux-6.1` tree. The prebuilt staging
-area under `kernel/rockchip/rk3576` is still how the result reaches the build:
+The kernel is built in-tree by LineageOS' own `kernel.mk`, out of
+`kernel/rockchip/kernel-6.1` -- Khadas' RK3576 BSP, linux 6.1.141, non-GKI. That
+is the same source the Edge-2L RKR8 blobs were built against, so the in-kernel
+Mali matches `libGLES_mali`, which is the reason for preferring it over the
+6.1.99 Rockchip drop this port used earlier.
 
-| File | Origin |
+| What | Where |
 | --- | --- |
-| `Image` | built from source (6.1.99) |
-| `dtb/rk3576-m9s.dtb` | built from source; reproduces the stock dtb |
-| `resource.img` | repacked, stock `boot.img` "second" area (Rockchip `RSCE`) |
-| `dtbo.img` | stock `dtbo.img` (a single empty overlay) |
-| `lib/modules/*.ko` | built from source, `INSTALL_MOD_STRIP=1` |
+| Source | `kernel/rockchip/kernel-6.1` (`TARGET_KERNEL_SOURCE`) |
+| Config | `rockchip_defconfig` + `android-14.config` + `rk3576.config` + `rk3576_m9s.config`, in that order |
+| Board dts | `arch/arm64/boot/dts/rockchip/rk3576-m9{,s}.dts` on `rk3576-h96-max.dtsi` |
+| External modules | `kernel/rockchip/kernel-modules/wifi/aic8800` |
+| `dtbo.img` | still the stock one (a single empty overlay) |
+| `resource.img` bitmaps | still from the stock image |
 
-`TARGET_NO_KERNEL_OVERRIDE := true` disables LineageOS' kernel build task and
-the image is supplied through `PRODUCT_COPY_FILES ... :kernel`.
+`rk3576_m9s.config` is the board delta, derived by diffing the merged config
+against the stock 6.1.75 one; it turns off Edge-2L hardware and debug options
+and matches stock's BCMDHD bus choice. The M9 and the M9S share it -- the two
+boards are electrically identical and differ only in their IR remote.
+
+The board dts to build is named once, per board, as `TARGET_DTB_NAME`;
+`TARGET_DTB_LIST_WILDCARD` turns it into the single dtb that goes into
+`dtb.img`.
+
+The AIC8800 WiFi/BT driver is not part of the kernel tree -- Rockchip ships its
+third-party WiFi drivers in `external/wifi_driver`, mirrored here as
+`kernel/rockchip/kernel-modules/wifi`. It is built as an out-of-tree module via
+`TARGET_KERNEL_EXT_MODULES`, the way `device/amlogic/g12-common` builds mali and
+media. The driver's own Makefiles were taught to keep their hardcoded vendor
+toolchain paths and recursive `make` rules behind `ifeq ($(KERNELRELEASE),)`, so
+they apply only to a standalone build and not when kbuild drives them.
 
 Rockchip stores `resource.img` in the boot image "second" area, so
-`TARGET_BOOTLOADER_IS_2ND := true` plus the copy rule in `Android.mk` stage it
-as `$(PRODUCT_OUT)/2ndbootloader` for `mkbootimg --second`.
+`TARGET_BOOTLOADER_IS_2ND := true` and `Android.mk` builds it as
+`$(PRODUCT_OUT)/2ndbootloader` for `mkbootimg --second`. **It is repacked around
+the freshly built dtb on every build.** The `rk-kernel.dtb` entry inside that
+container is the copy U-Boot actually reads; leaving a stale one there boots the
+new kernel against the old device tree, with no error anywhere.
 
 ## Vendor blobs
 
