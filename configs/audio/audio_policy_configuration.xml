@@ -19,11 +19,39 @@
 
     <modules>
         <module name="primary" halVersion="2.0">
+            <!-- LineageOS deviation from stock, which attaches Speaker only.
+
+                 This board has no speaker and no codec. rk3576-h96-max.dtsi
+                 exposes a dummy on SAI1 and spoofs its card name to
+                 "rockchip,es8388" so the HAL still finds it, and real audio
+                 leaves over HDMI and SPDIF. The framework's Speaker device is
+                 therefore a hole in the ground, and something has to make HDMI
+                 an available output or nothing is ever routed there.
+
+                 On stock that something is RkAudioSettingService.java, a
+                 Rockchip patch to frameworks/base that calls
+                 setDeviceConnect(DEVICE_OUT_AUX_DIGITAL, STATE_CONNECTED) on
+                 hotplug. LineageOS ships no such service, so the policy never
+                 learns HDMI exists.
+
+                 It did not matter until the RKR8 blobs. The RKR5 audio HAL
+                 opened every sound card for the primary stream, HDMI included,
+                 so sound came out whatever the policy chose. RKR8 stops doing
+                 that. In hardware/rockchip/audio/primary_hal/audio/audio_hw.c,
+                 the "open all sound card to output one audio stream at the same
+                 time" block now skips HDMI, with the comment "hdmi is taken by
+                 direct/mulit pcm output", leaving Speaker and SPDIF. On this
+                 board that is the dummy codec and, until the pinmux fix in
+                 rk3576-h96-max.dtsi, nothing at all. Hence silence.
+
+                 Attaching HDMI Out is the honest description of the hardware:
+                 it is the only audio output this box physically has.
+                 See BRINGUP-NOTES.md section 7.21. -->
             <attachedDevices>
                 <item>Speaker</item>
-
+                <item>HDMI Out</item>
             </attachedDevices>
-            <defaultOutputDevice>Speaker</defaultOutputDevice>
+            <defaultOutputDevice>HDMI Out</defaultOutputDevice>
             <mixPorts>
                 <mixPort name="primary output" role="source" flags="AUDIO_OUTPUT_FLAG_PRIMARY">
                     <profile name="" format="AUDIO_FORMAT_PCM_16_BIT"
