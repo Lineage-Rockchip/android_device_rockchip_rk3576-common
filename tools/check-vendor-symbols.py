@@ -39,13 +39,20 @@ AUDIT = ("vendor", "odm")
 # of system libraries via the LLNDK allowlist, so system has to be searchable
 # even though we never audit it here.
 # Each entry maps a staging directory to the obj/PACKAGING intermediates that
-# list what actually survives into the image. The system image is the odd one
-# out: its intermediates are named "systemimage", not "system".
+# list what actually survives into the image.
+#
+# The system entry used to be "systemimage". Soong builds the filesystem images
+# itself in Android 16 and writes obj/PACKAGING/system_intermediates, so the old
+# name silently resolved to nothing and every system library read as "(missing
+# library: liblog.so)" -- which the summary line counts as unresolved. If this
+# tool ever reports hundreds of files with missing *libraries* rather than
+# missing symbols, check these names against out/target/product/*/obj/PACKAGING
+# first.
 PROVIDERS = (
     ("vendor", "vendor"),
     ("odm", "odm"),
     ("vendor_dlkm", "vendor_dlkm"),
-    ("system", "systemimage"),
+    ("system", "system"),
     ("system_ext", "system_ext"),
     ("product", "product"),
 )

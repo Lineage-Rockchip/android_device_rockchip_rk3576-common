@@ -32,36 +32,34 @@ blob_fixups: blob_fixups_user_type = {
     # Rockchip's camera impls call two libui entry points Android 14 dropped:
     # the GraphicBufferMapper::lock overload taking outBytesPerPixel/
     # outBytesPerStride, and the single-argument unlock. compat's libui_shim
-    # forwards both to the overloads that survived.
+    # forwards both to the overloads that survived. Still true of the RKR8
+    # blobs, which now link libui directly and pull in more of it -- including
+    # unlockAsync, which Android 16 did not remove but did make inline, so
+    # libui no longer exports it. libshims/ui_shim.cpp is that one symbol.
     (
-        'vendor/lib/camera.device-external-impl-rk.so',
         'vendor/lib64/camera.device-external-impl-rk.so',
         'vendor/lib64/camera.device-internal-impl-rk.so',
     ): blob_fixup()
         .add_needed('libui_shim.so')
-        .replace_needed(GRAPHICS_COMMON_V4, GRAPHICS_COMMON_CURRENT),
+        .add_needed('libui_shim_rk.so'),
     # graphics.common is at V7 tree-side, and Soong rejects two versions of one
     # aidl_interface in a single dependency graph. The interface is types-only
     # and AIDL is ABI-compatible upwards.
+    #
+    # The list shrank with the RKR8 rebase: libGLES_mali and both camera impls
+    # dropped graphics.common-V4 from their NEEDED entirely, so only the Arm
+    # gralloc allocator and mapper still need the rewrite.
     (
         'vendor/bin/hw/android.hardware.graphics.allocator-V1-service',
-        'vendor/lib/egl/libGLES_mali.so',
-        'vendor/lib64/egl/libGLES_mali.so',
-        'vendor/lib/hw/android.hardware.graphics.allocator-V1-arm.so',
         'vendor/lib64/hw/android.hardware.graphics.allocator-V1-arm.so',
-        'vendor/lib/hw/android.hardware.graphics.allocator-V1-bifrost.so',
         'vendor/lib64/hw/android.hardware.graphics.allocator-V1-bifrost.so',
-        'vendor/lib/hw/android.hardware.graphics.mapper@4.0-impl-bifrost.so',
         'vendor/lib64/hw/android.hardware.graphics.mapper@4.0-impl-bifrost.so',
     ): blob_fixup()
         .replace_needed(GRAPHICS_COMMON_V4, GRAPHICS_COMMON_CURRENT),
     # Same problem for IAllocator: stock mixes V1 and V2 clients. Bumping a
     # client is safe; the V1 *service* is deliberately left alone, because
     # relinking a server would have it advertise methods it does not implement.
-    (
-        'vendor/lib/hw/camera.rk30board.so',
-        'vendor/lib64/hw/camera.rk30board.so',
-    ): blob_fixup()
+    'vendor/lib64/hw/camera.rk30board.so': blob_fixup()
         .replace_needed(
             'android.hardware.graphics.allocator-V1-ndk.so',
             'android.hardware.graphics.allocator-V2-ndk.so',
@@ -76,10 +74,7 @@ blob_fixups: blob_fixups_user_type = {
         .add_needed('libcrypto_shim.so'),
     # Arm ships this as vulkan.mali.so and Rockchip renamed the file without
     # touching the ELF, which check_elf_file rejects.
-    (
-        'vendor/lib/hw/vulkan.rk3576.so',
-        'vendor/lib64/hw/vulkan.rk3576.so',
-    ): blob_fixup()
+    'vendor/lib64/hw/vulkan.rk3576.so': blob_fixup()
         .fix_soname(),
     # cppbor::Item gained two virtual methods since Android 14, so the Android
     # 14 library is extracted rather than built (BRINGUP-NOTES.md section 7.7).
@@ -119,7 +114,6 @@ blob_fixups: blob_fixups_user_type = {
         'vendor/lib64/libRkkeymint.so',
         'vendor/lib64/libRkpuresoftkeymasterdevice.so',
         'vendor/lib64/libRksoftkeymasterdevice.so',
-        'vendor/lib64/lib_Rk_keymaster_keymint_utils.so',
         'vendor/lib64/libcppbor_external_rk.so',
     ): blob_fixup()
         .replace_needed('libbase.so', 'libbase-v33.so'),
@@ -129,17 +123,16 @@ blob_fixups: blob_fixups_user_type = {
     # into the caller's frame. That is what crash-loops the composer, lights and
     # camera services. BRINGUP-NOTES.md section 7.12.
     #
-    # hwcomposer.rk30board.so deliberately has no libui-v34 fixup: it had one on
-    # the vtable theory and it changed nothing (test131/133 vs test128/130).
+    #
+    # camera.rk30board.so is new to this list: RKR8 gave it a libtinyxml2
+    # dependency the RKR5 build did not have.
     (
         'vendor/bin/hw/android.hardware.camera.provider-V1-external-service-rk',
         'vendor/bin/hw/android.hardware.lights-service.rockchip',
-        'vendor/lib/android.hardware.camera.provider-V1-external-impl-rk.so',
-        'vendor/lib/camera.device-external-impl-rk.so',
-        'vendor/lib/hw/hwcomposer.rk30board.so',
         'vendor/lib64/android.hardware.camera.provider-V1-external-impl-rk.so',
         'vendor/lib64/camera.device-external-impl-rk.so',
         'vendor/lib64/camera.device-internal-impl-rk.so',
+        'vendor/lib64/hw/camera.rk30board.so',
         'vendor/lib64/hw/hwcomposer.rk30board.so',
     ): blob_fixup()
         .replace_needed('libtinyxml2.so', 'libtinyxml2-v34.so'),
@@ -148,11 +141,40 @@ blob_fixups: blob_fixups_user_type = {
     # the blob instantiates it itself through an inline create(). compat's
     # composer_utils is that Android 14 source under a -v34 name.
     # BRINGUP-NOTES.md section 7.13.
+    # ...and the reason the same service also drops composer@2.2-resources.so.
+    # That library exports *zero* symbols -- it is a header-only wrapper -- and
+    # the service imports none of them, so the NEEDED entry does nothing except
+    # pull in the Android 16 composer@2.1-resources.so, and with it libui.so.
+    # Both then sit in the process's global group, which the linker searches
+    # before a dlopen'd library's own, so they would win over the -v34 pair
+    # that hwcomposer.rk30board.so and this service are supposed to be using.
+    # Removing it is what makes both -v34 substitutions actually take effect.
     'vendor/bin/hw/android.hardware.graphics.composer3-service.rockchip': blob_fixup()
         .replace_needed(
             'android.hardware.graphics.composer@2.1-resources.so',
             'android.hardware.graphics.composer@2.1-resources-v34.so',
-        ),
+        )
+        .remove_needed('android.hardware.graphics.composer@2.2-resources.so'),
+    # sizeof(android::GraphicBuffer) went 256 -> 3376 between Android 14 and 16.
+    # This blob does `operator new(0x100)` and then calls the constructor out of
+    # libui, so the current library initialises 3120 bytes past the end of the
+    # allocation. It survives until something actually composites a solid-colour
+    # layer -- an app splash screen -- and then dies in ~GraphicBuffer reading a
+    # member that was never inside the object. BRINGUP-NOTES.md section 7.19.
+    #
+    # One library is the whole fix: nothing else in the composer process touches
+    # GraphicBuffer or GraphicBufferMapper. librga.so imports neither (which is
+    # what made 7.9 hold off), and composer@2.1-resources-v34 imports neither.
+    # All 8 libui symbols this blob needs are exported by the v34 snapshot.
+    'vendor/lib64/hw/hwcomposer.rk30board.so': blob_fixup()
+        .replace_needed('libui.so', 'libui-v34.so'),
+    # librga.so declares libui.so and imports not one symbol from it. Left
+    # alone it is the only remaining path by which the platform libui reaches
+    # the composer process, so dropping it means that process holds exactly one
+    # libui -- the v34 one -- instead of two with overlapping definitions. That
+    # was 7.11's standing objection to using the snapshot here at all.
+    'vendor/lib64/librga.so': blob_fixup()
+        .remove_needed('libui.so'),
 }  # fmt: skip
 
 # Libraries extracted under -rockchip module names (MODULE_SUFFIX_BASENAMES in

@@ -1,40 +1,25 @@
-## All blobs are from the stock H96 Max M9S firmware
-## rk3576_a001_H96_Max_M9S_BTM_ATV-20250314.1513 (Android 14, SDK 34)
+## All blobs are from the Khadas Edge-2L stock firmware
+## Edge-2L-Android-14-V20260428, Rockchip SDK ANDROID14_RKR8
+## (Android 14, SDK 34, vendor API level 34) -- 64-bit only.
 
 ## Audio
 vendor/bin/hw/android.hardware.audio.service
 vendor/etc/init/android.hardware.audio.service.rc:vendor/etc/init/rk_audio.service.rc
-vendor/lib/hw/android.hardware.audio@7.1-impl.so
-vendor/lib/hw/audio.primary.rk30board.so
-vendor/lib/hw/libanr.so
-vendor/lib/libasc_dec.so
-vendor/lib/libtinyalsa_iec958.so
 vendor/lib64/hw/android.hardware.audio@7.1-impl.so
 vendor/lib64/hw/audio.primary.rk30board.so
-vendor/lib64/libasc_dec.so
 vendor/lib64/libtinyalsa_iec958.so
 
 ## Bluetooth
 vendor/bin/hw/android.hardware.bluetooth@1.0-service
-vendor/etc/bluetooth/bt_vendor.conf
 vendor/etc/bluetooth/rtkbt.conf
 vendor/etc/bluetooth/skwbt.conf
 vendor/etc/bluetooth/sv6160.nvbin
+vendor/etc/bluetooth/sv6160lite.nvbin
 vendor/etc/bluetooth/sv6316.nvbin
-vendor/etc/firmware/fmacfw_calib_8800dc_hbt_u02.bin
-vendor/etc/firmware/fmacfw_patch_8800dc_hbt_u02.bin
-vendor/etc/firmware/fmacfw_patch_tbl_8800dc_hbt_u02.bin
-vendor/etc/firmware/fmacfwbt.bin
-vendor/etc/firmware/fmacfwbt_8800d80_u02.bin
 vendor/etc/firmware/rtl8761bt_config
 vendor/etc/firmware/rtl8761bt_config_vendor
 vendor/etc/firmware/rtl8761bt_fw
 vendor/etc/init/android.hardware.bluetooth@1.0-service.rc:vendor/etc/init/rk_bluetooth@1.0-service.rc
-vendor/lib/hw/android.hardware.bluetooth@1.0-impl.so
-vendor/lib/libbt-vendor-aic.so
-vendor/lib/libbt-vendor-realtek.so
-vendor/lib/libbt-vendor-seekwave.so
-vendor/lib/libbt-vendor.so
 vendor/lib64/hw/android.hardware.bluetooth@1.0-impl.so
 vendor/lib64/libbt-vendor-aic.so
 vendor/lib64/libbt-vendor-realtek.so
@@ -62,6 +47,7 @@ vendor/etc/camera/camera3_profiles_rk356x.xml
 vendor/etc/camera/camera3_profiles_rk3576.xml
 vendor/etc/camera/camera3_profiles_rk3588.xml
 vendor/etc/camera/graph_descriptor.xml
+vendor/etc/camera/pre_exposure_param.xml
 vendor/etc/camera/rkisp1/ar0144_default_default.xml
 vendor/etc/camera/rkisp1/bg0806_86mc09-l09_trc-2177d6-01.xml
 vendor/etc/camera/rkisp1/gc0403_default_default.xml
@@ -119,14 +105,26 @@ vendor/etc/camera/rkisp1/s5k4h8_hm618b-4h8-v1_s5ae08.xml
 vendor/etc/camera/rkisp1/sc031gs_default_default.xml
 vendor/etc/camera/rkisp1/sc132gs_blackvision_f00101a.xml
 vendor/etc/camera/rkisp1/sc2232_default_default.xml
+vendor/etc/camera/rkisp2/CAC_gc05a2_KYT-11210-V2_default/cac2_map_hw_2592x1944.bin
+vendor/etc/camera/rkisp2/CAC_imx415_CMK-OT2022-PX1_IR0147-50IRC-8M-F20/cac2_map_hw_3840x2160.bin
+vendor/etc/camera/rkisp2/CAC_os04a10_CMK-OT1607-FV1_M12-40IRC-4MP-F16/cac2_map_hw_2688x1520.bin
+vendor/etc/camera/rkisp2/CAC_ov16880_KYT-11379-V1_default/cac2_map_hw_4672x3504.bin
+vendor/etc/camera/rkisp2/CAC_s5k4h5yb_G1-T-B-s5k_XA-0806B/cac2_map_hw_3280x2464.bin
+vendor/etc/camera/rkisp2/CAC_sc4336_OT01_40IRC_F16/cac2_map_hw_1920x1080.bin
+vendor/etc/camera/rkisp2/CAC_sc4336_OT01_40IRC_F16/cac2_map_hw_2560x1440.bin
 vendor/etc/camera/rkisp2/CAC_sc4336_OT01_40IRC_F16/cac_map_hw_1920x1080.bin
 vendor/etc/camera/rkisp2/CAC_sc4336_OT01_40IRC_F16/cac_map_hw_2560x1440.bin
 vendor/etc/camera/rkisp2/OX03C10.json
 vendor/etc/camera/rkisp2/gc05a2_KYT-11210-V2_default.json
 vendor/etc/camera/rkisp2/imx415_CMK-OT2022-PX1_IR0147-50IRC-8M-F20.json
 vendor/etc/camera/rkisp2/imx464_CMK-OT1980-PX1_SHG102.json
+vendor/etc/camera/rkisp2/imx585_CMK-IMX585-PX1_FH34SRJ-30SCK0.json
+vendor/etc/camera/rkisp2/imx678_FH34SRJ-30S_YG4118.json
 vendor/etc/camera/rkisp2/os04a10_CMK-OT1607-FV1_M12-40IRC-4MP-F16.json
+vendor/etc/camera/rkisp2/os08a10_default_default.json
 vendor/etc/camera/rkisp2/ov16880_KYT-11379-V1_default.json
+vendor/etc/camera/rkisp2/ov50c40_HZGA06_ZE0082C1.json
+vendor/etc/camera/rkisp2/ox03c10_default_default.json
 vendor/etc/camera/rkisp2/s5k3l8xx_KYT-11097-B-V1_default.json
 vendor/etc/camera/rkisp2/s5k4h5yb_G1-T-B-s5k_XA-0806B.json
 vendor/etc/camera/rkisp2/sc4336_OT01_40IRC_F16.json
@@ -139,11 +137,6 @@ vendor/firmware/fw_rk1608_bypass.rkl
 vendor/firmware/fw_rk1608_ov2718_1frame.rkl
 vendor/firmware/fw_rk1608_ov2718_2frame.rkl
 vendor/firmware/preisp_imx327.rkl
-vendor/lib/android.hardware.camera.provider-V1-external-impl-rk.so
-vendor/lib/camera.device-external-impl-rk.so
-vendor/lib/hw/camera.rk30board.so
-vendor/lib/librkaiq.so
-vendor/lib/librkisp.so
 vendor/lib64/android.hardware.camera.provider-V1-external-impl-rk.so
 vendor/lib64/camera.device-external-impl-rk.so
 vendor/lib64/camera.device-internal-impl-rk.so
@@ -155,7 +148,6 @@ vendor/lib64/librkisp.so
 vendor/bin/hw/android.hardware.graphics.composer3-service.rockchip
 vendor/etc/init/hwc3-rk.rc
 vendor/etc/vintf/manifest/hwc3-default.xml
-vendor/lib/hw/hwcomposer.rk30board.so
 vendor/lib64/hw/hwcomposer.rk30board.so
 
 ## Connectivity firmware
@@ -174,6 +166,8 @@ vendor/etc/firmware/BCM4356A2.hcd
 vendor/etc/firmware/BCM4359C0-CYW.hcd
 vendor/etc/firmware/BCM4359C0.hcd
 vendor/etc/firmware/BCM4362A2.hcd
+vendor/etc/firmware/BCM4384A0.hcd
+vendor/etc/firmware/BT_Firmware.mk
 vendor/etc/firmware/EA6521QF_SEEKWAVE_R00005.bin
 vendor/etc/firmware/EA6521QF_SEEKWAVE_R00005.ini
 vendor/etc/firmware/EA6521QT_SEEKWAVE_R00005.bin
@@ -188,7 +182,16 @@ vendor/etc/firmware/RT2870AP.dat
 vendor/etc/firmware/RT2870APCard.dat
 vendor/etc/firmware/RT2870STA.dat
 vendor/etc/firmware/RT2870STACard.dat
-vendor/etc/firmware/TV_Firmware.mk
+vendor/etc/firmware/SWT6621S_DRAM_SDIO.bin
+vendor/etc/firmware/SWT6621S_IRAM_SDIO.bin
+vendor/etc/firmware/SWT6621S_NV_SDIO.bin
+vendor/etc/firmware/SWT6621S_NV_SDIO.ini
+vendor/etc/firmware/SWT6621S_NV_SDIO_ALONE.bin
+vendor/etc/firmware/SWT6621S_NV_SDIO_SHARE.bin
+vendor/etc/firmware/SWT6621S_NV_for_test_alone.bin
+vendor/etc/firmware/SWT6621S_NV_for_test_share.bin
+vendor/etc/firmware/SWT6621S_SEEKWAVE_R00001.bin
+vendor/etc/firmware/SWT6621S_SEEKWAVE_R00001.ini
 vendor/etc/firmware/aic_userconfig.txt
 vendor/etc/firmware/aic_userconfig_8800d80.txt
 vendor/etc/firmware/aic_userconfig_8800dc.txt
@@ -212,6 +215,8 @@ vendor/etc/firmware/clm_bcm43752a2_ag.blob
 vendor/etc/firmware/clm_bcm43752a2_pcie_ag.blob
 vendor/etc/firmware/clm_syn43711a0.blob
 vendor/etc/firmware/clm_syn43756b0.blob
+vendor/etc/firmware/clm_syn4384a0.blob
+vendor/etc/firmware/config.txt
 vendor/etc/firmware/fmacfw.bin
 vendor/etc/firmware/fmacfw_8800d80.bin
 vendor/etc/firmware/fmacfw_8800d80_u02.bin
@@ -324,10 +329,13 @@ vendor/etc/firmware/fw_patch_test.bin
 vendor/etc/firmware/fw_patch_u03.bin
 vendor/etc/firmware/fw_syn43711a0_sdio.bin
 vendor/etc/firmware/fw_syn43756b0_pcie.bin
+vendor/etc/firmware/fw_syn4384a0_pcie.bin
 vendor/etc/firmware/lmacfw_rf_8800d80.bin
 vendor/etc/firmware/lmacfw_rf_8800d80_u02.bin
 vendor/etc/firmware/lmacfw_rf_8800dc.bin
+vendor/etc/firmware/md5.txt
 vendor/etc/firmware/nh660.hcd
+vendor/etc/firmware/nvram.txt
 vendor/etc/firmware/nvram_4330.txt
 vendor/etc/firmware/nvram_4330_oob.txt
 vendor/etc/firmware/nvram_AP6181.txt
@@ -368,6 +376,7 @@ vendor/etc/firmware/nvram_ap6398sa.txt
 vendor/etc/firmware/nvram_ap6398sv.txt
 vendor/etc/firmware/nvram_ap6452.txt
 vendor/etc/firmware/nvram_ap6611s.txt
+vendor/etc/firmware/nvram_ap6684p.txt
 vendor/etc/firmware/nvram_awnb108.txt
 vendor/etc/firmware/nvram_azw256.txt
 vendor/etc/firmware/nvram_azw372.txt
@@ -376,13 +385,34 @@ vendor/etc/firmware/otp.bin.z77
 vendor/etc/firmware/readme.txt
 vendor/etc/firmware/rk903.hcd
 vendor/etc/firmware/rk903_26M.hcd
+vendor/etc/firmware/rtl8703as_config
+vendor/etc/firmware/rtl8703as_fw
+vendor/etc/firmware/rtl8703bs_config
+vendor/etc/firmware/rtl8703bs_fw
+vendor/etc/firmware/rtl8703cs_config
+vendor/etc/firmware/rtl8703cs_fw
+vendor/etc/firmware/rtl8723a_config
+vendor/etc/firmware/rtl8723a_config_addr
+vendor/etc/firmware/rtl8723a_fw
+vendor/etc/firmware/rtl8723as_config
+vendor/etc/firmware/rtl8723as_fw
 vendor/etc/firmware/rtl8723b_config
+vendor/etc/firmware/rtl8723b_config_2Ant_S0
 vendor/etc/firmware/rtl8723b_fw
 vendor/etc/firmware/rtl8723bs_VQ0_config
 vendor/etc/firmware/rtl8723bs_VQ0_fw
 vendor/etc/firmware/rtl8723bs_config
 vendor/etc/firmware/rtl8723bs_fw
 vendor/etc/firmware/rtl8723bu_config
+vendor/etc/firmware/rtl8723c_fw
+vendor/etc/firmware/rtl8723cs_0_config
+vendor/etc/firmware/rtl8723cs_0_fw
+vendor/etc/firmware/rtl8723cs_cg_config
+vendor/etc/firmware/rtl8723cs_cg_fw
+vendor/etc/firmware/rtl8723cs_vf_config
+vendor/etc/firmware/rtl8723cs_vf_fw
+vendor/etc/firmware/rtl8723cs_xx_config
+vendor/etc/firmware/rtl8723cs_xx_fw
 vendor/etc/firmware/rtl8723d_config
 vendor/etc/firmware/rtl8723d_fw
 vendor/etc/firmware/rtl8723ds_config
@@ -402,8 +432,8 @@ vendor/etc/firmware/rtl8733bs_8723fs_config
 vendor/etc/firmware/rtl8733bs_8723fs_config_vendor
 vendor/etc/firmware/rtl8733bs_8723fs_fw
 vendor/etc/firmware/rtl8761a_config
-vendor/etc/firmware/rtl8761a_fw
-vendor/etc/firmware/rtl8761at8192er_fw
+vendor/etc/firmware/rtl8761at8192ee_fw
+vendor/etc/firmware/rtl8761at8812ae_fw
 vendor/etc/firmware/rtl8761at_config
 vendor/etc/firmware/rtl8761at_fw
 vendor/etc/firmware/rtl8761au8192ee_fw
@@ -414,7 +444,11 @@ vendor/etc/firmware/rtl8761aw8192eu_fw
 vendor/etc/firmware/rtl8761b_config
 vendor/etc/firmware/rtl8761b_config_vendor
 vendor/etc/firmware/rtl8761b_fw
-vendor/etc/firmware/rtl8761bs_fw
+vendor/etc/firmware/rtl8761c_mx_config
+vendor/etc/firmware/rtl8761c_mx_fw
+vendor/etc/firmware/rtl8761cs_fw
+vendor/etc/firmware/rtl8761ct_mx_config
+vendor/etc/firmware/rtl8761ct_mx_fw
 vendor/etc/firmware/rtl8821a_config
 vendor/etc/firmware/rtl8821a_fw
 vendor/etc/firmware/rtl8821as_config
@@ -459,17 +493,17 @@ vendor/etc/firmware/rtl8852cs_config
 vendor/etc/firmware/rtl8852cs_fw
 vendor/etc/firmware/rtl8852cu_config
 vendor/etc/firmware/rtl8852cu_fw
+vendor/etc/firmware/rtl8852ds_config
+vendor/etc/firmware/rtl8852ds_fw
+vendor/etc/firmware/rtl8852du_config
+vendor/etc/firmware/rtl8852du_fw
 vendor/etc/firmware/ssv6051-sw.bin
 
 ## Display output manager
 vendor/bin/hw/rockchip.hardware.outputmanager@1.0-service
+vendor/bin/saveBaseParameter
 vendor/etc/init/rockchip.hardware.outputmanager@1.0-service.rc
 vendor/etc/vintf/manifest/rockchip.hardware.outputmanager@1.0-service.xml
-vendor/lib/hw/hw_output.default.so
-vendor/lib/hw/rockchip.hardware.outputmanager@1.0-impl.so
-vendor/lib/libbaseparameter.so
-vendor/lib/libhdr_params_parser.so
-vendor/lib/rockchip.hardware.outputmanager@1.0.so
 vendor/lib64/hw/hw_output.default.so
 vendor/lib64/hw/rockchip.hardware.outputmanager@1.0-impl.so
 vendor/lib64/libbaseparameter.so
@@ -485,9 +519,6 @@ vendor/lib64/libRkgatekeeper.so
 
 ## GPU
 vendor/bin/gpu_counter_producer;MODULE_SUFFIX=-rockchip
-vendor/lib/egl/libGLES_mali.so
-vendor/lib/hw/vulkan.rk3576.so
-vendor/lib/libgpudataproducer.so
 vendor/lib64/egl/libGLES_mali.so
 vendor/lib64/hw/vulkan.rk3576.so
 vendor/lib64/libgpudataproducer.so
@@ -496,11 +527,6 @@ vendor/lib64/libgpudataproducer.so
 vendor/bin/hw/android.hardware.graphics.allocator-V1-service
 vendor/etc/init/android.hardware.graphics.allocator-V1-service.rc
 vendor/etc/vintf/manifest/manifest_allocator.xml
-vendor/lib/arm.graphics-V5-ndk.so
-vendor/lib/hw/android.hardware.graphics.allocator-V1-arm.so
-vendor/lib/hw/android.hardware.graphics.allocator-V1-bifrost.so
-vendor/lib/hw/android.hardware.graphics.mapper@4.0-impl-bifrost.so
-vendor/lib/libgralloc_priv_omx.so
 vendor/lib64/arm.graphics-V5-ndk.so
 vendor/lib64/hw/android.hardware.graphics.allocator-V1-arm.so
 vendor/lib64/hw/android.hardware.graphics.allocator-V1-bifrost.so
@@ -508,11 +534,8 @@ vendor/lib64/hw/android.hardware.graphics.mapper@4.0-impl-bifrost.so
 vendor/lib64/libgralloc_priv_omx.so
 
 ## Hardware engines (RGA, IEP, JPEG)
-vendor/lib/libhwjpeg.so
-vendor/lib/libiep.so
-vendor/lib/librga.so
 vendor/lib64/libhwjpeg.so
-vendor/lib64/libiep.so
+vendor/lib64/libiep_vehicle.so
 vendor/lib64/librga.so
 
 ## HDCP
@@ -523,14 +546,12 @@ vendor/etc/init/init.hdcp2-host.rc
 vendor/bin/hw/android.hardware.tv.hdmi.cec-service
 vendor/etc/init/android.hardware.tv.hdmi.cec-service.rc:vendor/etc/init/rk_hdmi.cec-service.rc
 vendor/etc/vintf/manifest/android.hardware.tv.hdmi.cec-service.xml:vendor/etc/vintf/manifest/rk_hdmi.cec.xml
-vendor/lib/hw/hdmi_cec.rk30board.so
 vendor/lib64/hw/hdmi_cec.rk30board.so
 
 ## HDMI connection
 vendor/bin/hw/android.hardware.tv.hdmi.connection-service
 vendor/etc/init/android.hardware.tv.hdmi.connection-service.rc:vendor/etc/init/rk_hdmi.connection-service.rc
 vendor/etc/vintf/manifest/android.hardware.tv.hdmi.connection-service.xml:vendor/etc/vintf/manifest/rk_hdmi.connection.xml
-vendor/lib/hw/hdmi_connection.rk30board.so
 vendor/lib64/hw/hdmi_connection.rk30board.so
 
 ## Health
@@ -540,46 +561,23 @@ vendor/etc/vintf/manifest/android.hardware.health-service.rockchip.xml
 
 ## Init-files
 vendor/bin/init.insmod.sh
-vendor/etc/fstab.rk30board
 vendor/etc/fstab_swap.ext1024
 vendor/etc/fstab_swap.ext2048
 vendor/etc/fstab_swap.ext256
 vendor/etc/fstab_swap.ext4096
 vendor/etc/fstab_swap.ext512
 vendor/etc/fstab_swap.extnone
-vendor/etc/init/hw/init.box.samba.rc
-vendor/etc/init/hw/init.connectivity.rc
 vendor/etc/init/hw/init.mount_all.rc
 vendor/etc/init/hw/init.rk30board.environment.rc
 vendor/etc/init/hw/init.rk30board.rc
-vendor/etc/init/hw/init.rk3576.rc
+vendor/etc/init/hw/init.rkai.rc
 vendor/etc/init/hw/init.rockchip.rc
-vendor/etc/init/hw/set_cpu_affinity.sh
-vendor/etc/init/hw/set_performance.sh
 vendor/etc/init/init.tune_io.rc
 vendor/etc/ueventd.rc
 
-## Keylayouts
-vendor/usr/idc/CMIOT_REMOTE.idc
-vendor/usr/keylayout/27330000_pwm.kl
-vendor/usr/keylayout/CMIOT_REMOTE.kl
-vendor/usr/keylayout/HiRemote.idc
-vendor/usr/keylayout/HiRemote.kl
-vendor/usr/keylayout/Vendor_0416_Product_0300.kl
-vendor/usr/keylayout/fd8b0030_pwm.idc
-vendor/usr/keylayout/fd8b0030_pwm.kl
-vendor/usr/keylayout/fe6e0030_pwm.idc
-vendor/usr/keylayout/fe6e0030_pwm.kl
-vendor/usr/keylayout/fe700030_pwm.idc
-vendor/usr/keylayout/fe700030_pwm.kl
-vendor/usr/keylayout/vendor.kl
-vendor/usr/keylayout/virtual-remote.idc
-
 ## KeyMint
 vendor/bin/hw/android.hardware.security.keymint-service.optee
-vendor/bin/rockchip_rkp_factory_extraction_tool
 vendor/etc/init/android.hardware.security.keymint-service.optee.rc
-vendor/etc/init/init.rockchip_rkp_factory_service.rc
 vendor/etc/vintf/manifest/android.hardware.security.keymint-service.optee.xml
 vendor/etc/vintf/manifest/android.hardware.security.secureclock-service.optee.xml
 vendor/etc/vintf/manifest/android.hardware.security.sharedsecret-service.optee.xml
@@ -608,94 +606,41 @@ vendor/etc/seccomp_policy/android.hardware.media.c2@1.1-seccomp_policy
 vendor/etc/seccomp_policy/rockit.vendor.base.policy
 vendor/etc/vintf/manifest/manifest_media_c2_V1_1.xml
 vendor/etc/vintf/manifest/rockchip.hardware.rockit.hw@1.0-service.xml
-vendor/lib/libcodec2_rk_component.so
-vendor/lib/libcodec2_rk_store.so
-vendor/lib/libmpp.so
-vendor/lib/librockit_hw_hidl@1.0.so
-vendor/lib/rockchip.hardware.rockit.hw@1.0.so
 vendor/lib64/libcodec2_rk_component.so
 vendor/lib64/libcodec2_rk_store.so
 vendor/lib64/libmpp.so
+vendor/lib64/librockit_hw_hidl@1.0.so
+vendor/lib64/rockchip.hardware.rockit.hw@1.0.so
 
-## NPU / AI-PQ models
-vendor/etc/rkaipq_mssr_model0_NaturalSR540to1080_rknn200_rk3576.bin
-vendor/etc/rkaipq_mssr_model0_NaturalSR720to4K_rknn200_rk3576.bin
-vendor/etc/rkaipq_mssr_model0_fd_rknn200_rk3576.bin
-vendor/etc/rkaipq_mssr_model0_fe_rknn200_rk3576.bin
-vendor/etc/rkaipq_mssr_model0_fs_rknn200_rk3576.bin
-vendor/etc/rkaipq_mssr_model0_fsr_rknn200_rk3576.bin
-vendor/etc/rkaipq_mssr_model0_sd_rknn200_rk3576.bin
-vendor/etc/rkaipq_mssr_model0_std_rknn200_rk3576.bin
-vendor/etc/rkaipq_mssr_model1_DC1080p_rknn200_rk3576.bin
-vendor/etc/rkaipq_mssr_model1_DC540p_rknn200_rk3576.bin
-vendor/etc/rkaipq_mssr_model1_DC720p_rknn200_rk3576.bin
-vendor/etc/rkaipq_mssr_model1_IFBlockX5Stage0_rknn200_rk3576.bin
-vendor/etc/rkaipq_mssr_model1_IFBlockX5Stage1_rknn200_rk3576.bin
-vendor/etc/rkaipq_mssr_model1_IFBlockX5Stage2_rknn200_rk3576.bin
-vendor/etc/rkaipq_mssr_model1_NaturalSR1080to4K_rknn200_rk3576.bin
-vendor/etc/rkaipq_mssr_model1_fe_rknn200_rk3576.bin
-vendor/etc/rkaipq_mssr_model2_DC1080p_rknn200_rk3576.bin
-vendor/etc/rkaipq_mssr_model2_IFBlockX4Stage0_rknn200_rk3576.bin
-vendor/etc/rkaipq_mssr_model2_IFBlockX4Stage1_rknn200_rk3576.bin
-vendor/etc/rkaipq_mssr_model2_IFBlockX4Stage2_rknn200_rk3576.bin
-vendor/etc/rkaipq_mssr_model2_IFBlockX5Stage0_rknn200_rk3576.bin
-vendor/etc/rkaipq_mssr_model2_IFBlockX5Stage1_rknn200_rk3576.bin
-vendor/etc/rkaipq_mssr_model2_IFBlockX5Stage2_rknn200_rk3576.bin
-vendor/etc/rkaipq_mssr_model2_NaturalSR1080to4K_rknn200_rk3576.bin
-vendor/etc/rkaipq_mssr_model3_IFBlockX4Stage0_rknn200_rk3576.bin
-vendor/etc/rkaipq_mssr_model3_IFBlockX4Stage1_rknn200_rk3576.bin
-vendor/etc/rkaipq_mssr_model3_IFBlockX4Stage2_rknn200_rk3576.bin
-vendor/etc/rkaipq_mssr_model3_IFBlockX5Stage0_rknn200_rk3576.bin
-vendor/etc/rkaipq_mssr_model3_IFBlockX5Stage1_rknn200_rk3576.bin
-vendor/etc/rkaipq_mssr_model3_IFBlockX5Stage2_rknn200_rk3576.bin
-vendor/etc/rkaipq_mssr_model3_NaturalSR1080to4K_rknn200_rk3576.bin
-vendor/etc/rkaipq_mssr_model3_NaturalSR720to1080_rknn200_rk3576.bin
-vendor/etc/rkaipq_mssr_model4_IFBlockX4Stage0_rknn200_rk3576.bin
-vendor/etc/rkaipq_mssr_model4_IFBlockX4Stage1_rknn200_rk3576.bin
-vendor/etc/rkaipq_mssr_model4_IFBlockX4Stage2_rknn200_rk3576.bin
-vendor/etc/rkaipq_mssr_model4_NaturalSR1080to4K_rknn200_rk3576.bin
-vendor/etc/rkaipq_mssr_model4_NaturalSR720to1080_rknn200_rk3576.bin
-vendor/etc/rkaipq_mssr_model5_NaturalSR1080to4K_rknn200_rk3576.bin
-vendor/etc/rkaipq_mssr_model5_NaturalSR720to1080_rknn200_rk3576.bin
-vendor/lib/librknnrt.so
-vendor/lib64/librknnrt.so
+## Memtrack
+vendor/bin/hw/android.hardware.memtrack-service.rockchip
+vendor/etc/init/memtrack.rc
+vendor/etc/vintf/manifest/memtrack.xml
+vendor/lib64/libmemtrack-rockchip.so
 
 ## OP-TEE
+vendor/bin/hw/wait_for_optee
 vendor/bin/tee-supplicant
 vendor/etc/init/init.tee-supplicant.rc
-vendor/lib/libteec.so
+vendor/etc/init/wait_for_optee.rc
 vendor/lib/optee_armtz/0b82bae5-0cd0-49a5-9521-516dba9c43ba.ta
 vendor/lib/optee_armtz/258be795-f9ca-40e6-a869-9ce6886c5d5d.ta
 vendor/lib/optee_armtz/481a57df-aec8-47ad-92f5-eb9fc24f64a6.ta
 vendor/lib64/libteec.so
 
 ## Picture quality
-vendor/bin/rkauth_tool_bin
-vendor/bin/rkauth_verify_licence
-vendor/bin/rkpq_tool_server
-vendor/bin/rkswpq_demo
-vendor/etc/aipq_config.json
 vendor/etc/pq_config.json
-vendor/etc/pq_setting_config.json
 vendor/etc/vop_base_config.json
-vendor/lib/libpq.so
-vendor/lib/librkhwpq.so
-vendor/lib/librkswpq.so
-vendor/lib/libsculptor.so
-vendor/lib/libvdpp.so
-vendor/lib64/libpq.so
-vendor/lib64/librkhwpq.so
-vendor/lib64/librkswpq.so
-vendor/lib64/libsculptor.so
-vendor/lib64/libvdpp.so
 
 ## Power
 vendor/bin/hw/android.hardware.power-service.rockchip
 vendor/etc/init/power-aidl-rockchip.rc
 vendor/etc/vintf/manifest/power-aidl-rockchip.xml
 
-## seccomp
-vendor/etc/seccomp_policy/mediacodec.policy
+## Sensors
+vendor/bin/akmd
+vendor/etc/init/init.rockchip.akmd.rc
+vendor/lib64/lib_sensor_listener_local.so
 
 ## Thermal
 vendor/bin/hw/android.hardware.thermal-service.rockchip
@@ -705,17 +650,11 @@ vendor/etc/vintf/manifest/android.hardware.thermal-service.rockchip.xml
 ## USB
 vendor/bin/hw/android.hardware.usb-service.rockchip
 vendor/bin/hw/android.hardware.usb.gadget-service.rockchip
-vendor/bin/rockchip_udc_detector
 vendor/etc/init/android.hardware.usb-service.rc
 vendor/etc/init/android.hardware.usb.gadget-service.rockchip.rc
 vendor/etc/init/hw/init.rk30board.usb.rc
-vendor/etc/init/init.rockchip_udc_detector.rc
 vendor/etc/vintf/manifest/android.hardware.usb-service.xml
 vendor/etc/vintf/manifest/android.hardware.usb.gadget-service.rockchip.xml
-
-## Vendor storage
-vendor/bin/rk_vendor_storage_tool
-vendor/lib64/libvendor_storage.so
 
 ## Weaver
 vendor/bin/hw/android.hardware.weaver-service.optee
@@ -747,13 +686,6 @@ vendor/etc/wifi/wpa_config.txt
 vendor/etc/wifi/wpa_supplicant.conf
 vendor/etc/wifi/wpa_supplicant_overlay.conf
 vendor/etc/wifi/wpa_supplicant_rtk.conf
-vendor/lib/librkwifi-ctrl.so
-vendor/lib/libwifi-hal-aic.so;MODULE_SUFFIX=-rockchip
-vendor/lib/libwifi-hal-bcm.so;MODULE_SUFFIX=-rockchip
-vendor/lib/libwifi-hal-bes.so;MODULE_SUFFIX=-rockchip
-vendor/lib/libwifi-hal-rtk.so;MODULE_SUFFIX=-rockchip
-vendor/lib/libwifi-hal-skw.so;MODULE_SUFFIX=-rockchip
-vendor/lib/libwpa_client.so
 vendor/lib64/librkwifi-ctrl.so
 vendor/lib64/libwifi-hal-aic.so;MODULE_SUFFIX=-rockchip
 vendor/lib64/libwifi-hal-bcm.so;MODULE_SUFFIX=-rockchip
@@ -765,16 +697,15 @@ vendor/lib64/libwpa_client.so
 
 ## Rockchip platform
 vendor/bin/flash_img.sh
-vendor/bin/preinstall.sh
-vendor/bin/preinstall.sh.bak
 vendor/bin/read_pcie_info.sh
-vendor/bin/rkdevice_info
 vendor/bin/rkhelper
 vendor/etc/cfg_rockchip_default.xml
 vendor/etc/graphic/graphic_profiles.conf
 vendor/etc/public.libraries.txt
 vendor/etc/rockchip_forbid_packages.xml
 vendor/etc/session.xml
-vendor/lib/libsync_vendor.so
+vendor/etc/uvc_enc_cfg.conf
+vendor/lib64/hw/power.default.so
+vendor/lib64/hw/vibrator.default.so
 vendor/lib64/libcppbor_external.so:vendor/lib64/libcppbor_external_rk.so;FIX_SONAME
 vendor/lib64/libsync_vendor.so

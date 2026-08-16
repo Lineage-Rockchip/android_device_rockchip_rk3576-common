@@ -43,7 +43,7 @@ import subprocess
 import sys
 
 OUT_DIR = "/home/tomin/btrfs-subvolumes/android/los-23.2/out/target/product/m9s"
-STOCK_DIR = "/home/tomin/devel/AmlogicKitchen/rk3576-m9s/level2"
+STOCK_DIR = "/home/tomin/devel/AmlogicKitchen/edge-2l/level2"
 BLOB_DIR = ("/home/tomin/btrfs-subvolumes/android/los-23.2/"
             "vendor/rockchip/rk3576-common/proprietary")
 

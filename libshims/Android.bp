@@ -9,13 +9,15 @@
 // individual blobs with patchelf --add-needed, from blob_fixups in
 // extract-files.py, rather than being loaded globally.
 //
-// libui_shim is not defined here: hardware/lineage/compat already provides one
-// carrying exactly the two GraphicBufferMapper entry points the Rockchip camera
-// implementations want, and the blobs pull it in as a dependency.
+// hardware/lineage/compat's libui_shim covers the two GraphicBufferMapper
+// entry points Android 14 removed outright, and the camera blobs pull it in as
+// a dependency. libui_shim_rk below is a third one those blobs picked up in
+// RKR8; it was never removed, only inlined. See ui_shim.cpp.
 //
 // The -rk suffix is not decoration. hardware/lineage/compat has its own
-// libcrypto_shim (libcrypto/cbs.c, an unrelated set of symbols), and two
-// modules of one name are fatal once Make flattens the namespaces:
+// libcrypto_shim (libcrypto/cbs.c, an unrelated set of symbols) and its own
+// libui_shim, and two modules of one name are fatal once Make flattens the
+// namespaces:
 //
 //   base_rules.mk:320: error: device/rockchip/rk3576-common/libshims:
 //   MODULE.TARGET.SHARED_LIBRARIES.libcrypto_shim already defined by
@@ -25,5 +27,15 @@ cc_library_shared {
     name: "libcrypto_shim_rk",
     srcs: ["crypto_shim.cpp"],
     shared_libs: ["libcrypto"],
+    vendor: true,
+}
+
+cc_library_shared {
+    name: "libui_shim_rk",
+    srcs: ["ui_shim.cpp"],
+    shared_libs: [
+        "libbase",
+        "libui",
+    ],
     vendor: true,
 }

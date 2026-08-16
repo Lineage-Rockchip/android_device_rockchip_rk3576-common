@@ -14,8 +14,23 @@ PRODUCT_SOONG_NAMESPACES += $(COMMON_PATH)
 PRODUCT_SHIPPING_API_LEVEL := 34
 PRODUCT_ENFORCE_VINTF_MANIFEST := true
 
-## 64/32-bit (ro.zygote=zygote64_32)
-$(call inherit-product, $(SRC_TARGET_DIR)/product/core_64_bit.mk)
+## 64-bit only (ro.zygote=zygote64)
+# Not core_64_bit.mk. The RKR8 vendor image has no 32-bit libraries at all --
+# no vendor/lib/egl/libGLES_mali.so and no 32-bit gralloc mapper -- so under
+# zygote64_32 the secondary zygote aborts on startup and loops the boot:
+#
+#   Executable: /system/bin/app_process32   ABI: 'arm'   >>> zygote <<<
+#   Abort message: 'couldn't find an OpenGL ES implementation, make sure one
+#   of persist.graphics.egl, ro.hardware.egl and ro.board.platform is set'
+#
+# The Edge-2L ROM itself is built this way (ro.zygote=zygote64,
+# ro.vendor.product.cpu.abilist32 empty), so this matches the blobs rather
+# than working around them. The cost is real: 32-bit-only apps can no longer
+# be installed. The alternative is to take vendor/lib/egl/libGLES_mali.so and
+# vendor/lib/hw/android.hardware.graphics.mapper@4.0-impl-bifrost.so from an
+# RKR5 dump, which splits the Arm DDK and gralloc across bitnesses (g15p0
+# against g25p0) -- see BRINGUP-NOTES.md section 7.16.
+$(call inherit-product, $(SRC_TARGET_DIR)/product/core_64_bit_only.mk)
 
 ## Dynamic partitions
 PRODUCT_USE_DYNAMIC_PARTITIONS := true
@@ -285,6 +300,57 @@ PRODUCT_PACKAGES += \
 # daemon is built.
 PRODUCT_PACKAGES += \
     wificond
+
+## Bluetooth transport
+# bt_vendor.conf names the UART the controller is wired to, so it is board
+# data, not blob data. Taking the Edge-2L copy is what broke Bluetooth on the
+# first RKR8 boot -- theirs says /dev/ttyS5, this board is on /dev/ttyS4:
+#
+#   bt_userial_vendor: userial vendor open: opening /dev/ttyS5
+#   bt_userial_vendor: userial vendor open: unable to open /dev/ttyS5
+#   android.hardware.bluetooth@1.0-impl: Open: fd_count 0 is invalid!
+#   bluetooth: hci_backend_hidl.cc:45 initializationComplete:
+#              status == HidlStatus::SUCCESS      <- com.android.bluetooth SIGABRT
+#
+# init.connectivity.rc is the other half: it is what chowns the node to the
+# bluetooth user. Without it the HAL opens the right path and still gets EACCES,
+# because ueventd.rc covers ttyS0-ttyS2 only in both dumps.
+#
+# Both are excluded from proprietary-files.txt so these are the only rules for
+# the paths. init-files/init.rk3576.rc is here for an unrelated board delta;
+# see the header of the file itself.
+PRODUCT_COPY_FILES += \
+    $(COMMON_PATH)/configs/bluetooth/bt_vendor.conf:$(TARGET_COPY_OUT_VENDOR)/etc/bluetooth/bt_vendor.conf \
+    $(COMMON_PATH)/init-files/init.connectivity.rc:$(TARGET_COPY_OUT_VENDOR)/etc/init/hw/init.connectivity.rc \
+    $(COMMON_PATH)/init-files/init.rk3576.rc:$(TARGET_COPY_OUT_VENDOR)/etc/init/hw/init.rk3576.rc
+
+## AIC8800 Bluetooth firmware, from the M9S RKR5 dump
+# The Edge-2L does not use an AIC8800 for Bluetooth, so its ROM ships none of
+# these and the blob list cannot carry them. Kept here rather than in
+# proprietary-files.txt because extract-utils takes a single source dump.
+#
+# Read this before assuming they fix anything: **the aic8800_bsp.ko we build
+# never requests these names.** Checked with strings on the built module, on
+# aic8800_btlpm.ko, on libbt-vendor.so and on libbt-vendor-aic.so -- nothing in
+# the image contains "fmacfwbt". On this driver generation the D80's BT and
+# Wi-Fi firmware are one unified blob set, fw_patch_8800d80_u02.bin +
+# fw_patch_table_8800d80_u02.bin + lmacfw_rf_8800d80_u02.bin + the fmacfw, and
+# those come from the Edge-2L dump -- which is the matched pair, because the
+# driver is built from rk-android-6.1, the same RKR8-era BSP.
+#
+# So these are insurance for the older USB-flavour driver naming, not a fix.
+# If Bluetooth or Wi-Fi does misbehave, the thing to try is pinning that whole
+# 8800d80_u02 set to RKR5 instead: drop the five files into firmware/aic8800/,
+# add them here, and add the matching paths to EXCLUDE_EXACT in
+# gen-proprietary-files.py so the Edge-2L copies do not claim the same
+# destination. Take the set whole -- mixing patch tables across firmware
+# revisions for one chip is its own failure mode.
+PRODUCT_COPY_FILES += \
+    $(COMMON_PATH)/firmware/aic8800/fmacfwbt.bin:$(TARGET_COPY_OUT_VENDOR)/etc/firmware/fmacfwbt.bin \
+    $(COMMON_PATH)/firmware/aic8800/fmacfwbt_8800d80_u02.bin:$(TARGET_COPY_OUT_VENDOR)/etc/firmware/fmacfwbt_8800d80_u02.bin \
+    $(COMMON_PATH)/firmware/aic8800/fmacfw_calib_8800dc_hbt_u02.bin:$(TARGET_COPY_OUT_VENDOR)/etc/firmware/fmacfw_calib_8800dc_hbt_u02.bin \
+    $(COMMON_PATH)/firmware/aic8800/fmacfw_patch_8800dc_hbt_u02.bin:$(TARGET_COPY_OUT_VENDOR)/etc/firmware/fmacfw_patch_8800dc_hbt_u02.bin \
+    $(COMMON_PATH)/firmware/aic8800/fmacfw_patch_tbl_8800dc_hbt_u02.bin:$(TARGET_COPY_OUT_VENDOR)/etc/firmware/fmacfw_patch_tbl_8800dc_hbt_u02.bin
 
 ## Permissions
 PRODUCT_COPY_FILES += \
