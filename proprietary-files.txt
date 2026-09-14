@@ -709,3 +709,13 @@ vendor/lib64/hw/power.default.so
 vendor/lib64/hw/vibrator.default.so
 vendor/lib64/libcppbor_external.so:vendor/lib64/libcppbor_external_rk.so;FIX_SONAME
 vendor/lib64/libsync_vendor.so
+
+## AIC8800 Bluetooth firmware
+## Pinned from the H96 Max M9S stock ROM
+## rk3576_a001_H96_Max_M9S_BTM_ATV-20250314.1513 (Rockchip SDK
+## ANDROID14_RKR5); the Edge-2L ROM does not ship them.
+vendor/etc/firmware/fmacfwbt.bin|538e92b6d8b055af9e7a98d2f132bb759c874df9
+vendor/etc/firmware/fmacfwbt_8800d80_u02.bin|2706663319cc98d89b006831252ca764a10c8439
+vendor/etc/firmware/fmacfw_calib_8800dc_hbt_u02.bin|8a3dc92014c62349f0c3fd77bdea0ef39e366e91
+vendor/etc/firmware/fmacfw_patch_8800dc_hbt_u02.bin|ef95a3f04fd54c19eadcf618fde9a723ca9e01f3
+vendor/etc/firmware/fmacfw_patch_tbl_8800dc_hbt_u02.bin|b45850ad282f57cda3b0e2fe942df8783b4d8f44

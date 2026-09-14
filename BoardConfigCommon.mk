@@ -50,16 +50,14 @@ TARGET_NO_KERNEL := false
 TARGET_KERNEL_SOURCE := kernel/rockchip/kernel-6.1
 
 # rockchip_defconfig is the base; the rest are fragments merged in this order.
-# rk3576_m9s.config carries the deltas that make the result match the stock
-# config, and is board-independent (the M9 and M9S are the same board).
+# The board appends its own delta fragment after including this file.
 # The paths are spelled out rather than using TARGET_KERNEL_CONFIG for the
 # fragments because android-14.config does not live in arch/arm64/configs, and
 # because ALL_KERNEL_DEFCONFIG_SRCS puts TARGET_KERNEL_CONFIG_EXT last.
 TARGET_KERNEL_CONFIG := rockchip_defconfig
 TARGET_KERNEL_CONFIG_EXT := \
     $(TARGET_KERNEL_SOURCE)/kernel/configs/android-14.config \
-    $(TARGET_KERNEL_SOURCE)/arch/arm64/configs/rk3576.config \
-    $(TARGET_KERNEL_SOURCE)/arch/arm64/configs/rk3576_m9s.config
+    $(TARGET_KERNEL_SOURCE)/arch/arm64/configs/rk3576.config
 
 BOARD_KERNEL_IMAGE_NAME := Image
 
@@ -163,8 +161,10 @@ TARGET_USES_MKE2FS := true
 
 BOARD_FLASH_BLOCK_SIZE := 131072
 
-# Super size from the stock dump (level2/config/super_size.txt).
-BOARD_SUPER_PARTITION_SIZE := 4294967296
+# Per board; must be set before this file is included.
+ifeq ($(BOARD_SUPER_PARTITION_SIZE),)
+$(error BOARD_SUPER_PARTITION_SIZE must be set by the board BoardConfig.mk)
+endif
 
 SSI_PARTITIONS := product system system_dlkm system_ext
 TREBLE_PARTITIONS := odm odm_dlkm vendor vendor_dlkm
@@ -246,11 +246,6 @@ TARGET_SYSTEM_PROP += $(COMMON_PATH)/system.prop
 TARGET_VENDOR_PROP += $(COMMON_PATH)/vendor.prop
 TARGET_PRODUCT_PROP += $(COMMON_PATH)/product.prop
 
-## Display
-# Emits ro.sf.lcd_density, and must be numeric or soong_build panics.
-# 320, not stock's 213 -- see the note in rk3576.mk.
-TARGET_SCREEN_DENSITY := 320
-
 ## Graphics
 TARGET_USES_HWC2 := true
 BOARD_USES_DRM_HWCOMPOSER := true
@@ -289,7 +284,6 @@ BOARD_HAVE_BLUETOOTH_ROCKCHIP := true
 
 ## BUILD_BROKEN_*
 BUILD_BROKEN_DUP_RULES := false
-BUILD_BROKEN_ELF_PREBUILT_PRODUCT_COPY_FILES := true
 
 ## Include the common proprietary BoardConfig makefile
 -include vendor/rockchip/rk3576-common/BoardConfigVendor.mk

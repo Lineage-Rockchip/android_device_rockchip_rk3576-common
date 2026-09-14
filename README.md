@@ -4,7 +4,10 @@ Shared LineageOS 23.2 tree for Rockchip RK3576 Android TV boxes.
 
 It is modelled on `device/amlogic/ne-common`: this directory holds everything
 tied to the SoC, and a thin per-board tree (for example `device/h96/m9s`)
-inherits from it.
+inherits from it. The board tree owns what the board wires up: the super
+partition size, the screen density, the kernel config fragment, the Bluetooth
+UART (`bt_vendor.conf` and `init.connectivity.rc`, which must move together),
+the ethernet modules in `init.insmod.cfg`, and the IR remote keylayout.
 
 ## Kernel
 
@@ -17,7 +20,7 @@ Mali matches `libGLES_mali`, which is the reason for preferring it over the
 | What | Where |
 | --- | --- |
 | Source | `kernel/rockchip/kernel-6.1` (`TARGET_KERNEL_SOURCE`) |
-| Config | `rockchip_defconfig` + `android-14.config` + `rk3576.config` + `rk3576_m9s.config`, in that order |
+| Config | `rockchip_defconfig` + `android-14.config` + `rk3576.config`, then the board's own fragment (`rk3576_m9s.config`), in that order |
 | Board dts | `arch/arm64/boot/dts/rockchip/rk3576-m9{,s}.dts` on `rk3576-h96-max.dtsi` |
 | External modules | `kernel/rockchip/kernel-modules/wifi/aic8800` |
 | `dtbo.img` | still the stock one (a single empty overlay) |
@@ -26,7 +29,9 @@ Mali matches `libGLES_mali`, which is the reason for preferring it over the
 `rk3576_m9s.config` is the board delta, derived by diffing the merged config
 against the stock 6.1.75 one; it turns off Edge-2L hardware and debug options
 and matches stock's BCMDHD bus choice. The M9 and the M9S share it -- the two
-boards are electrically identical and differ only in their IR remote.
+boards are electrically identical and differ only in their IR remote. The board
+tree appends it to `TARGET_KERNEL_CONFIG_EXT` *after* including
+`BoardConfigCommon.mk`, which is what keeps it last in the merge.
 
 The board dts to build is named once, per board, as `TARGET_DTB_NAME`;
 `TARGET_DTB_LIST_WILDCARD` turns it into the single dtb that goes into
@@ -77,9 +82,15 @@ property there, check that a blob in the dump actually contains the string --
 ROM's build.prop covers every board the SDK supports. Roughly a third of what
 the M9S ROM set addressed libraries this one does not ship.
 
-`firmware/aic8800/` holds the AIC8800 Bluetooth firmware, which is copied from
-the M9S dump because the Edge-2L uses a different combo chip and its ROM has
-none. `rk3576.mk` installs it and explains the caveat.
+Blobs that are not in that dump are *pinned*: the `PINNED` table in the
+generator names a second dump and the paths to take from it, and emits each as
+`path|sha1`. The only entries today are the five AIC8800 Bluetooth firmware
+files from the M9S ROM, which the Edge-2L (a different combo chip) does not
+ship. extract-utils backs pinned files up out of `vendor/` before it cleans and
+restores them when the hash matches, so they live in the vendor repo and survive
+every extraction against the Edge-2L dump. Seeding is by hand, once: copy the
+files into `vendor/rockchip/rk3576-common/proprietary/`, then run
+`./setup-makefiles.py`.
 
 Regenerate with:
 

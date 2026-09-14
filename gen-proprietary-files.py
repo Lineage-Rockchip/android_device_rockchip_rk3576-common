@@ -1,5 +1,6 @@
 #!/usr/bin/env python3
 """Generate proprietary-files.txt for the RK3576 common tree from a stock dump."""
+import hashlib
 import os
 import re
 import sys
@@ -64,7 +65,7 @@ EXCLUDE_EXACT = {
     # Bluetooth controller is on, and the Edge-2L is /dev/ttyS5 where this board
     # is /dev/ttyS4. bt_vendor.conf tells the HAL which node to open;
     # init.connectivity.rc is what chowns it to the bluetooth user, without
-    # which the open fails with EACCES. Supplied from configs/ and init-files/.
+    # which the open fails with EACCES. Supplied by the board tree.
     "vendor/etc/bluetooth/bt_vendor.conf",
     "vendor/etc/init/hw/init.connectivity.rc",
     # Also a board delta, and unrelated to Bluetooth: RKR8 pins policy0 to the
@@ -314,6 +315,29 @@ AOSP_SOURCE_LIBS = {
     "libz_stable.so", "local_time.default.so",
 }
 
+# --- Blobs pinned from a second dump ---
+# Emitted as "path|sha1", hashed from the named dump; extract-utils restores
+# pinned files from the vendor tree instead of SRC. See README.md.
+# Each entry: (section title, source dump, comment lines, paths).
+PINNED = [
+    (
+        "AIC8800 Bluetooth firmware",
+        "/home/tomin/devel/AmlogicKitchen/rk3576-m9s/level2",
+        [
+            "Pinned from the H96 Max M9S stock ROM",
+            "rk3576_a001_H96_Max_M9S_BTM_ATV-20250314.1513 (Rockchip SDK",
+            "ANDROID14_RKR5); the Edge-2L ROM does not ship them.",
+        ],
+        [
+            "vendor/etc/firmware/fmacfwbt.bin",
+            "vendor/etc/firmware/fmacfwbt_8800d80_u02.bin",
+            "vendor/etc/firmware/fmacfw_calib_8800dc_hbt_u02.bin",
+            "vendor/etc/firmware/fmacfw_patch_8800dc_hbt_u02.bin",
+            "vendor/etc/firmware/fmacfw_patch_tbl_8800dc_hbt_u02.bin",
+        ],
+    ),
+]
+
 VENDOR_LIB_RE = re.compile(r"^vendor/lib(64)?/[^/]+$")
 AOSP_SOURCE_LIB_RE = re.compile(
     r"^vendor/lib(64)?/(?:hw/|soundfx/|mediadrm/)?([^/]+)$")
@@ -348,6 +372,26 @@ def is_excluded(path):
     if is_aosp_source_lib(path):
         return True
     return False
+
+
+def sha1(path):
+    with open(path, "rb") as f:
+        return hashlib.sha1(f.read()).hexdigest()
+
+
+def pinned_sections():
+    """Emit the PINNED entries as sections, each file with its source hash."""
+    out = []
+    for title, src, comment, paths in PINNED:
+        out.append("")
+        out.append("## %s" % title)
+        out.extend("## %s" % line for line in comment)
+        for f in paths:
+            full = os.path.join(src, f)
+            if not os.path.isfile(full):
+                sys.exit("pinned file missing from %s: %s" % (src, f))
+            out.append("%s|%s" % (f, sha1(full)))
+    return out
 
 
 def collect():
@@ -455,9 +499,11 @@ def main():
         out.append("")
         out.append("## %s" % name)
         out.extend(spec(f) for f in group)
+    out.extend(pinned_sections())
     out.append("")
     sys.stdout.write("\n".join(out))
-    sys.stderr.write("total blobs: %d in %d sections\n" % (len(files), len(names) + 1))
+    sys.stderr.write("total blobs: %d in %d sections, plus %d pinned\n" % (
+        len(files), len(names) + 1, sum(len(p[3]) for p in PINNED)))
 
 
 if __name__ == "__main__":

@@ -41,16 +41,6 @@ PRODUCT_BUILD_VENDOR_DLKM_IMAGE := true
 PRODUCT_BUILD_ODM_DLKM_IMAGE := true
 PRODUCT_BUILD_SYSTEM_DLKM_IMAGE := true
 
-## Screen density
-# xhdpi (320), not stock's tvdpi (213). It pairs with TARGET_SCREEN_DENSITY in
-# BoardConfigCommon.mk and selects which TvFrameworkOverlay resources apply.
-# Android 16 added values-tvdpi/config.xml to device/google/atv with
-# config_maxUiWidth=1280, which clamps this 1080p panel to 720p; values-xhdpi
-# keeps it at 1920. 320 is also what /vendor/etc/display_settings.xml forces
-# and what LineageOS 21 ran. See BRINGUP-NOTES.md section 7.15.
-PRODUCT_AAPT_CONFIG := xlarge large tvdpi hdpi xhdpi
-PRODUCT_AAPT_PREF_CONFIG := xhdpi
-
 ##
 ## NOTE ON PACKAGE SELECTION
 ##
@@ -301,65 +291,11 @@ PRODUCT_PACKAGES += \
 PRODUCT_PACKAGES += \
     wificond
 
-## Bluetooth transport
-# bt_vendor.conf names the UART the controller is wired to, so it is board
-# data, not blob data. Taking the Edge-2L copy is what broke Bluetooth on the
-# first RKR8 boot -- theirs says /dev/ttyS5, this board is on /dev/ttyS4:
-#
-#   bt_userial_vendor: userial vendor open: opening /dev/ttyS5
-#   bt_userial_vendor: userial vendor open: unable to open /dev/ttyS5
-#   android.hardware.bluetooth@1.0-impl: Open: fd_count 0 is invalid!
-#   bluetooth: hci_backend_hidl.cc:45 initializationComplete:
-#              status == HidlStatus::SUCCESS      <- com.android.bluetooth SIGABRT
-#
-# init.connectivity.rc is the other half: it is what chowns the node to the
-# bluetooth user. Without it the HAL opens the right path and still gets EACCES,
-# because ueventd.rc covers ttyS0-ttyS2 only in both dumps.
-#
-# Both are excluded from proprietary-files.txt so these are the only rules for
-# the paths. init-files/init.rk3576.rc is here for an unrelated board delta;
-# see the header of the file itself.
+## Init
+# bt_vendor.conf, init.connectivity.rc and init.insmod.cfg are board data and
+# come from the board tree. See the header of the file for this one.
 PRODUCT_COPY_FILES += \
-    $(COMMON_PATH)/configs/bluetooth/bt_vendor.conf:$(TARGET_COPY_OUT_VENDOR)/etc/bluetooth/bt_vendor.conf \
-    $(COMMON_PATH)/init-files/init.connectivity.rc:$(TARGET_COPY_OUT_VENDOR)/etc/init/hw/init.connectivity.rc \
     $(COMMON_PATH)/init-files/init.rk3576.rc:$(TARGET_COPY_OUT_VENDOR)/etc/init/hw/init.rk3576.rc
-
-## Boot-time kernel modules
-# The stock init.insmod.sh only recognises modules.load entries that carry a .ko
-# suffix, and kernel.mk writes bare module names, so that list loads nothing at
-# all. This cfg is the same script's second pass and takes full paths; the dump
-# ships no copy of it, so this is a pure addition rather than a forked blob.
-# See the header of the file.
-PRODUCT_COPY_FILES += \
-    $(COMMON_PATH)/init-files/init.insmod.cfg:$(TARGET_COPY_OUT_VENDOR)/etc/init.insmod.cfg
-
-## AIC8800 Bluetooth firmware, from the M9S RKR5 dump
-# The Edge-2L does not use an AIC8800 for Bluetooth, so its ROM ships none of
-# these and the blob list cannot carry them. Kept here rather than in
-# proprietary-files.txt because extract-utils takes a single source dump.
-#
-# Read this before assuming they fix anything: **the aic8800_bsp.ko we build
-# never requests these names.** Checked with strings on the built module, on
-# aic8800_btlpm.ko, on libbt-vendor.so and on libbt-vendor-aic.so -- nothing in
-# the image contains "fmacfwbt". On this driver generation the D80's BT and
-# Wi-Fi firmware are one unified blob set, fw_patch_8800d80_u02.bin +
-# fw_patch_table_8800d80_u02.bin + lmacfw_rf_8800d80_u02.bin + the fmacfw, and
-# those come from the Edge-2L dump -- which is the matched pair, because the
-# driver is built from rk-android-6.1, the same RKR8-era BSP.
-#
-# So these are insurance for the older USB-flavour driver naming, not a fix.
-# If Bluetooth or Wi-Fi does misbehave, the thing to try is pinning that whole
-# 8800d80_u02 set to RKR5 instead: drop the five files into firmware/aic8800/,
-# add them here, and add the matching paths to EXCLUDE_EXACT in
-# gen-proprietary-files.py so the Edge-2L copies do not claim the same
-# destination. Take the set whole -- mixing patch tables across firmware
-# revisions for one chip is its own failure mode.
-PRODUCT_COPY_FILES += \
-    $(COMMON_PATH)/firmware/aic8800/fmacfwbt.bin:$(TARGET_COPY_OUT_VENDOR)/etc/firmware/fmacfwbt.bin \
-    $(COMMON_PATH)/firmware/aic8800/fmacfwbt_8800d80_u02.bin:$(TARGET_COPY_OUT_VENDOR)/etc/firmware/fmacfwbt_8800d80_u02.bin \
-    $(COMMON_PATH)/firmware/aic8800/fmacfw_calib_8800dc_hbt_u02.bin:$(TARGET_COPY_OUT_VENDOR)/etc/firmware/fmacfw_calib_8800dc_hbt_u02.bin \
-    $(COMMON_PATH)/firmware/aic8800/fmacfw_patch_8800dc_hbt_u02.bin:$(TARGET_COPY_OUT_VENDOR)/etc/firmware/fmacfw_patch_8800dc_hbt_u02.bin \
-    $(COMMON_PATH)/firmware/aic8800/fmacfw_patch_tbl_8800dc_hbt_u02.bin:$(TARGET_COPY_OUT_VENDOR)/etc/firmware/fmacfw_patch_tbl_8800dc_hbt_u02.bin
 
 ## Permissions
 PRODUCT_COPY_FILES += \
