@@ -9,14 +9,12 @@
 #   ro.hwui.use_vulkan                            <- TARGET_USES_VULKAN
 #   ro.minui.pixel_format                         <- TARGET_RECOVERY_PIXEL_FORMAT
 #   ro.board.platform                             <- TARGET_BOARD_PLATFORM
-#   ro.zygote / dalvik.vm.dex2oat64.enabled       <- core_64_bit_only.mk
+#   ro.zygote / dalvik.vm.dex2oat64.enabled       <- core_64_bit.mk
 #   ro.recovery.usb.*                             <- build defaults (same values)
 #
-# Values follow the Khadas Edge-2L RKR8 dump the blobs come from, not the M9S
-# RKR5 ROM they started from. Every Rockchip-specific property here was checked
-# against the strings of the blob that reads it -- most of the picture-quality
-# block went away with libpq/libsculptor/librkswpq, which RKR8 does not ship.
-# BRINGUP-NOTES.md section 7.16 has the method and the full before/after.
+# Values follow the dump the blobs come from, and every Rockchip-specific
+# property here was checked against the strings of the blob that reads it.
+# Run BRINGUP-NOTES.md 7.18's one-liner before adding or keeping one.
 #
 
 ## Bluetooth
@@ -167,47 +165,32 @@ codec2_fbc_disable=0
 # rt_player_mem_policy / rt_vdec_fbc_min_stride, which are equally unread here
 # and are therefore not adopted.
 
-## Picture quality (RKPQ)
-# Almost all of this block is gone with the RKR8 rebase. librkswpq, libsculptor,
-# librkhwpq, libvdpp, librknnrt and libpq are not in the Edge-2L ROM at all, and
-# nothing left in the image links them -- so the AI-PQ path is not disabled now,
-# it is not shipped. Every property that lived in those libraries was dropped,
-# checked one at a time against the strings of the RKR5 blob that used to read
-# it and the RKR8 image that no longer does:
-#
-#   vendor.hwc.hwpq_force_enable     was hwcomposer.rk30board.so   -> gone
-#   persist.vendor.sculptor.*        was libcodec2_rk_component,   -> gone
-#                                        librockit_hw_hidl, libsculptor
-#   persist.vendor.rkpq.{fe.enable,hwpq_lce_ratio,hwpq_shp_en,io.cache.limit,
-#     iptv_sr_enable,loglevel,memc.edge_gain,memc.scd_th,memc.stp.enable,
-#     memc.watermark,mssr.initflag,watermark_type}   was librkswpq -> gone
-#
-# That also retires section 4.6 of BRINGUP-NOTES.md at the root: with no
-# libsculptor there is no rkauth_activate(), no libcurl, and no SIGSYS in the
-# codec service. The properties were the workaround; the library is now simply
-# absent.
-#
-# These four survive, in hw_output.default.so, and are the only rkpq names in
-# any RKR8 blob besides libhdr_params_parser's HDR luminance set (which stock
-# leaves unset, so we do too). They are the AI-PQ feature toggles, and their
-# implementation is exactly what is missing -- so set them to an explicit 0
-# rather than the -1 "auto" the M9S ROM used.
-persist.vendor.rkpq.dc.enable=0
-persist.vendor.rkpq.hwpq_aisd_enable=0
-persist.vendor.rkpq.memc.enable=0
-persist.vendor.rkpq.sr.enable=0
+## Picture quality (RKPQ / AI-PQ)
+# Exactly the dump's own set, verbatim. Not a blend with another ROM's values
+# (7.29), and not a hand-derived flag either: initflag 18 (26 minus the MEMC
+# bit) leaves every interpolated frame slot unfilled -- solid green. 7.30.
+ro.vendor.aipq_settings=true
+persist.vendor.rkpq.hwpq_aisd_enable=1
+persist.vendor.rkpq.hwpq_dc_dci_thr0=120
+persist.vendor.rkpq.hwpq_dc_dci_thr1=210
+persist.vendor.rkpq.hwpq_shp_en=1
+persist.vendor.rkpq.iptv_sr_enable=1
+persist.vendor.rkpq.memc.strength=100
+persist.vendor.rkpq.memc.watermark=0
+persist.vendor.rkpq.mssr.initflag=26
+persist.vendor.rkpq.sr.strength=100
+persist.vendor.tvinput.rkpq.mode=3
+vendor.tvinput.rkpq.aisd_en=1
 
 ## Platform
 ro.soc.manufacturer=Rockchip
 ro.soc.model=RK3576
 ro.vendor.rk_sdk=1
-# The blob set, not the board -- both RK3576 boards would report the same, and
-# it is the SDK the /vendor libraries were built from.
+# The blob set, not the board -- it is the SDK the /vendor libraries were
+# built from. MS is Rockchip's media / set-top-box line. BRINGUP-NOTES.md 7.25.
 ro.vendor.sdkversion=RK3576_ANDROID14.0_MID_V1.0
-ro.vendor.rksdk.version=ANDROID14_RKR8
-# Dropped: ro.vendor.rkalgo=rkalgo. Its only readers in the RKR5 dump were
-# libsculptor.so and rkswpq_demo, neither of which RKR8 ships, and the /rkalgo
-# mount and set_performance.sh that populated the partition went with them.
+ro.vendor.rksdk.version=ANDROID14_MS_RKR3
+# Still dropped: ro.vendor.rkalgo=rkalgo. No file in this dump reads the name.
 
 ## Radio (no modem on this board)
 ro.boot.noril=true

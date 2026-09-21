@@ -257,20 +257,11 @@ TARGET_USES_VULKAN := true
 TARGET_USES_C2_COMPONENT := true
 
 ## Audio HAL service bitness
-# AOSP's android.hardware.audio.service defaults to compile_multilib prefer32,
-# because init needs the binary at one fixed path. The RKR8 blob is 64-bit
-# where the RKR5 one was 32-bit, so its prebuilt now only replaces the arm64
-# variant and the surviving arm one collides on the install path:
-#
-#   packaging conflict at bin/hw/android.hardware.audio.service
-#
-# run_64bit is the switch the module itself provides for this. It has to be
-# true whichever binary wins, because the HAL implementation the service
-# hw_get_module()s -- android.hardware.audio@7.1-impl.so -- only exists as a
-# 64-bit library in this dump.
+# Must match the extracted binary, or the two collide on the install path.
+# The dump's is 32-bit, which is AOSP's prefer32 default. BRINGUP-NOTES.md 7.25.
 SOONG_CONFIG_NAMESPACES += android_hardware_audio
 SOONG_CONFIG_android_hardware_audio += run_64bit
-SOONG_CONFIG_android_hardware_audio_run_64bit := true
+SOONG_CONFIG_android_hardware_audio_run_64bit := false
 
 ## Wi-Fi (AIC8800D80 over SDIO on mmc0)
 # The whole stack is extracted from stock. BOARD_WLAN_DEVICE is deliberately

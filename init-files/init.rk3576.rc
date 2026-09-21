@@ -123,3 +123,9 @@ service cmdserver /system/bin/cmdserver
 
 on property:sys.boot_completed=1
     start cmdserver
+
+on property:vendor.vpp.aipq.meta_enable=1
+    setprop sys.rkai.performance.enable 1
+
+on property:vendor.vpp.aipq.meta_enable=0
+    setprop sys.rkai.performance.enable 0

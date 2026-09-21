@@ -12,10 +12,10 @@ the ethernet modules in `init.insmod.cfg`, and the IR remote keylayout.
 ## Kernel
 
 The kernel is built in-tree by LineageOS' own `kernel.mk`, out of
-`kernel/rockchip/kernel-6.1` -- Khadas' RK3576 BSP, linux 6.1.141, non-GKI. That
-is the same source the Edge-2L RKR8 blobs were built against, so the in-kernel
-Mali matches `libGLES_mali`, which is the reason for preferring it over the
-6.1.99 Rockchip drop this port used earlier.
+`kernel/rockchip/kernel-6.1` -- Khadas' RK3576 BSP, linux 6.1.141, non-GKI. Its
+in-kernel Mali is `g25p0-00eac0`, which is what both halves of `libGLES_mali` in
+the current dump report, and the reason for preferring it over the 6.1.99
+Rockchip drop this port used earlier.
 
 | What | Where |
 | --- | --- |
@@ -59,22 +59,36 @@ dump. Because that ROM is already Android 14 / SDK 34 with an FCM target-level 8
 vendor image, essentially the whole vendor partition is reused; only VNDK/AOSP-
 built libraries and source-built infrastructure are excluded.
 
-The dump is the **Khadas Edge-2L**, `Edge-2L-Android-14-V20260428`, Rockchip SDK
-`ANDROID14_RKR8` -- not the H96 Max M9S ROM this port started from
-(`ANDROID14_RKR5`, 2025-03-14). Same SoC and the same vendor API level, so the
-compat fixups below still apply, but ~16 months newer and matching the 6.1.99
-BSP kernel this tree builds. `SRC` at the top of `gen-proprietary-files.py` is
-the one place that names it.
+The dump is the **FriendlyELEC NanoPi RK3576**, built 2026-06-01, Rockchip SDK
+`ANDROID14_MS_RKR3` -- the MS (media / set-top-box) SDK line, not the mainline
+RKR one, and not the H96 Max M9S ROM this port started from (`ANDROID14_RKR5`,
+2025-03-14) nor the Khadas Edge-2L `ANDROID14_RKR8` dump used from 7.16. Same
+SoC, same vendor API level, same vendor security patch (2025-06-05) and the
+same Mali release (`g25p0-00eac0`) as that Edge-2L dump, so the compat fixups
+below still apply and the userspace still matches the kbase this tree builds.
+`SRC` at the top of `gen-proprietary-files.py` is the one place that names it.
 
-**It ships no 32-bit vendor libraries.** `/vendor/lib` therefore holds only
-AOSP-built ones, and there is no 32-bit `egl/libGLES_mali.so` or
-`hw/android.hardware.graphics.mapper@4.0-impl-bifrost.so`. That is why the
-product inherits `core_64_bit_only.mk` and not `core_64_bit.mk`: under
-`zygote64_32` the secondary zygote aborts during preload with "couldn't find an
-OpenGL ES implementation" and the boot loops. 32-bit-only apps cannot be
-installed as a result. The alternative is to take those two files from an RKR5
-dump and keep `core_64_bit.mk`, which splits the Arm DDK and gralloc across
-bitnesses (`g15p0` against `g25p0`) -- its own hazard.
+Two things make it the base rather than the Edge-2L dump:
+
+**It ships both bitnesses,** including `lib/egl/libGLES_mali.so` and
+`lib/hw/android.hardware.graphics.mapper@4.0-impl-bifrost.so`, at the *same*
+Arm DDK release as the 64-bit halves. That is what lets the product inherit
+`core_64_bit.mk` again: the Edge-2L dump had no 32-bit vendor libraries at all,
+so under `zygote64_32` the secondary zygote aborted during preload with
+"couldn't find an OpenGL ES implementation" and the boot looped, forcing
+`core_64_bit_only.mk` and losing 32-bit-only apps. Taking the two files from an
+RKR5 dump instead would have split the Arm DDK and gralloc across bitnesses
+(`g15p0` against `g25p0`); this dump makes them a matched set.
+
+Because of that, **a blob fixup written for a `vendor/lib64` path almost always
+has a `vendor/lib` twin.** `extract-files.py` has a `both()` helper that expands
+one into both, and the fixups go through it; an ABI break in a platform library
+is an ABI break in both arches.
+
+**It ships the AI-PQ stack** -- `libpq`, `librkswpq`, `librkhwpq`, `libvdpp`,
+`librknnrt`, `libsculptor`, `aipq_config.json` and the 57 `rkaipq_mssr_*` RKNN
+models -- which no RKR dump for this SoC carries. See the picture-quality block
+in `vendor.prop` for how it is wired and why Sculptor ships disabled.
 
 `vendor.prop` follows the same dump. Before adding or keeping a Rockchip
 property there, check that a blob in the dump actually contains the string --
@@ -85,10 +99,11 @@ the M9S ROM set addressed libraries this one does not ship.
 Blobs that are not in that dump are *pinned*: the `PINNED` table in the
 generator names a second dump and the paths to take from it, and emits each as
 `path|sha1`. The only entries today are the five AIC8800 Bluetooth firmware
-files from the M9S ROM, which the Edge-2L (a different combo chip) does not
-ship. extract-utils backs pinned files up out of `vendor/` before it cleans and
+files from the M9S ROM. This dump *does* ship an AIC8800 set, but a different
+build of it, and the M9S files are the ones Bluetooth is known to work with on
+this board (7.20) -- so they stay pinned until the dump's are tried. extract-utils backs pinned files up out of `vendor/` before it cleans and
 restores them when the hash matches, so they live in the vendor repo and survive
-every extraction against the Edge-2L dump. Seeding is by hand, once: copy the
+every extraction against the main dump. Seeding is by hand, once: copy the
 files into `vendor/rockchip/rk3576-common/proprietary/`, then run
 `./setup-makefiles.py`.
 

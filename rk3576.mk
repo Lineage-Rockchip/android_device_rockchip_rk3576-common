@@ -14,23 +14,10 @@ PRODUCT_SOONG_NAMESPACES += $(COMMON_PATH)
 PRODUCT_SHIPPING_API_LEVEL := 34
 PRODUCT_ENFORCE_VINTF_MANIFEST := true
 
-## 64-bit only (ro.zygote=zygote64)
-# Not core_64_bit.mk. The RKR8 vendor image has no 32-bit libraries at all --
-# no vendor/lib/egl/libGLES_mali.so and no 32-bit gralloc mapper -- so under
-# zygote64_32 the secondary zygote aborts on startup and loops the boot:
-#
-#   Executable: /system/bin/app_process32   ABI: 'arm'   >>> zygote <<<
-#   Abort message: 'couldn't find an OpenGL ES implementation, make sure one
-#   of persist.graphics.egl, ro.hardware.egl and ro.board.platform is set'
-#
-# The Edge-2L ROM itself is built this way (ro.zygote=zygote64,
-# ro.vendor.product.cpu.abilist32 empty), so this matches the blobs rather
-# than working around them. The cost is real: 32-bit-only apps can no longer
-# be installed. The alternative is to take vendor/lib/egl/libGLES_mali.so and
-# vendor/lib/hw/android.hardware.graphics.mapper@4.0-impl-bifrost.so from an
-# RKR5 dump, which splits the Arm DDK and gralloc across bitnesses (g15p0
-# against g25p0) -- see BRINGUP-NOTES.md section 7.16.
-$(call inherit-product, $(SRC_TARGET_DIR)/product/core_64_bit_only.mk)
+## Dual-arch (ro.zygote=zygote64_32)
+# The dump ships a 32-bit GPU driver and gralloc at the same Arm DDK release as
+# the 64-bit ones. BRINGUP-NOTES.md 7.17 and 7.25.
+$(call inherit-product, $(SRC_TARGET_DIR)/product/core_64_bit.mk)
 
 ## Dynamic partitions
 PRODUCT_USE_DYNAMIC_PARTITIONS := true
@@ -174,13 +161,6 @@ PRODUCT_PACKAGES += \
 PRODUCT_PACKAGES += \
     android.hardware.tv.input@1.0-impl
 
-# RIL. Nothing loads these -- there is no rild and no radio HAL -- but stock
-# shipped them.
-PRODUCT_PACKAGES += \
-    libreference-ril \
-    libril \
-    librilutils
-
 # Plain utility libraries reached by dlopen or through a source-built module
 PRODUCT_PACKAGES += \
     libbinderdebug.vendor \
@@ -233,7 +213,8 @@ PRODUCT_COPY_FILES += \
     $(COMMON_PATH)/configs/media/media_codecs_c2_base.xml:$(TARGET_COPY_OUT_VENDOR)/etc/media_codecs_c2_base.xml \
     $(COMMON_PATH)/configs/media/media_codecs_google_c2.xml:$(TARGET_COPY_OUT_VENDOR)/etc/media_codecs_google_c2.xml \
     $(COMMON_PATH)/configs/media/media_codecs_performance.xml:$(TARGET_COPY_OUT_VENDOR)/etc/media_codecs_performance.xml \
-    $(COMMON_PATH)/configs/media/media_profiles_V1_0.xml:$(TARGET_COPY_OUT_VENDOR)/etc/media_profiles_V1_0.xml
+    $(COMMON_PATH)/configs/media/media_profiles_V1_0.xml:$(TARGET_COPY_OUT_VENDOR)/etc/media_profiles_V1_0.xml \
+    $(COMMON_PATH)/configs/media/android.hardware.media.c2@1.1-extended-seccomp-policy:$(TARGET_COPY_OUT_VENDOR)/etc/seccomp_policy/android.hardware.media.c2@1.1-extended-seccomp-policy
 
 ## DRM
 # ClearKey is built from source; CAS is dropped (it lives in an APEX now).

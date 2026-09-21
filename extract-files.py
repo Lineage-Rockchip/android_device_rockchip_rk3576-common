@@ -4,6 +4,8 @@
 # SPDX-License-Identifier: Apache-2.0
 #
 
+import struct
+
 from extract_utils.fixups_blob import (
     blob_fixup,
     blob_fixups_user_type,
@@ -28,6 +30,86 @@ namespace_imports = [
 GRAPHICS_COMMON_V4 = 'android.hardware.graphics.common-V4-ndk.so'
 GRAPHICS_COMMON_CURRENT = 'android.hardware.graphics.common-V7-ndk.so'
 
+
+# --- V1_1::utils::ComponentStore grew between Android 14 and 16 -------------
+# sizeof went 264 -> 288 and the RefBase subobject moved 248 -> 272. The codec
+# service inlined the complete object constructor, so it carries both numbers
+# twice: as immediates in main(), and as the virtual-base offsets inside the
+# ComponentStore vtable family it emits into .data.rel.ro. Patching only the
+# immediates fixes construction and then dies in registerAsService(), which
+# reads the offset back out of the vtable. BRINGUP-NOTES.md 7.28.
+#
+# Every edit asserts its old value, so a dump or platform change fails the
+# extraction instead of quietly producing a blob that crashes on the device.
+COMPONENTSTORE_VBASE_OLD = 248
+COMPONENTSTORE_VBASE_NEW = 272
+COMPONENTSTORE_VBASE_COUNT = 15
+
+# (anchored pattern, replacement). Each must occur exactly once.
+COMPONENTSTORE_INSNS = [
+    # mov w0, #0x108 -> #0x120        operator new(sizeof)
+    ('00218052ea040094', '00248052ea040094'),
+    # add x20, x19, #0xf8 -> #0x110   RefBase subobject
+    ('0305009474e20391', '0305009474420491'),
+    # str x9, [x19, #248] -> [x19, #272]   secondary vptr
+    ('680200f9697e00f9f60b40f9', '680200f9698a00f9f60b40f9'),
+]
+
+
+def _data_rel_ro(data: bytes):
+    """Return (offset, size) of .data.rel.ro from the ELF64 section headers."""
+    e_shoff = struct.unpack_from('<Q', data, 0x28)[0]
+    e_shentsize, e_shnum, e_shstrndx = struct.unpack_from('<HHH', data, 0x3a)
+    str_off = struct.unpack_from(
+        '<Q', data, e_shoff + e_shstrndx * e_shentsize + 0x18
+    )[0]
+    for i in range(e_shnum):
+        sh = e_shoff + i * e_shentsize
+        name_off = struct.unpack_from('<I', data, sh)[0]
+        end = data.index(b'\0', str_off + name_off)
+        if data[str_off + name_off:end] == b'.data.rel.ro':
+            off, size = struct.unpack_from('<QQ', data, sh + 0x18)
+            return off, size
+    raise AssertionError('.data.rel.ro not found')
+
+
+def patch_componentstore_layout(ctx, file, file_path, *args, **kwargs):
+    with open(file_path, 'rb') as f:
+        data = bytearray(f.read())
+
+    for search, replace in COMPONENTSTORE_INSNS:
+        sb, rb = bytes.fromhex(search), bytes.fromhex(replace)
+        assert len(sb) == len(rb)
+        n = data.count(sb)
+        assert n == 1, f'{file_path}: {search} occurs {n} times, expected 1'
+        data[:] = data.replace(sb, rb)
+
+    off, size = _data_rel_ro(data)
+    patched = 0
+    for i in range(off, off + size, 8):
+        word = struct.unpack_from('<q', data, i)[0]
+        if abs(word) != COMPONENTSTORE_VBASE_OLD:
+            continue
+        sign = 1 if word > 0 else -1
+        struct.pack_into('<q', data, i, sign * COMPONENTSTORE_VBASE_NEW)
+        patched += 1
+    assert patched == COMPONENTSTORE_VBASE_COUNT, (
+        f'{file_path}: patched {patched} virtual-base offsets, '
+        f'expected {COMPONENTSTORE_VBASE_COUNT}'
+    )
+
+    with open(file_path, 'wb') as f:
+        f.write(data)
+
+
+def both(*paths):
+    """Expand vendor/lib64 paths to both bitnesses. BRINGUP-NOTES.md 7.25."""
+    out = []
+    for path in paths:
+        out.append(path)
+        out.append(path.replace('vendor/lib64/', 'vendor/lib/', 1))
+    return tuple(out)
+
 blob_fixups: blob_fixups_user_type = {
     # Rockchip's camera impls call two libui entry points Android 14 dropped:
     # the GraphicBufferMapper::lock overload taking outBytesPerPixel/
@@ -36,7 +118,7 @@ blob_fixups: blob_fixups_user_type = {
     # blobs, which now link libui directly and pull in more of it -- including
     # unlockAsync, which Android 16 did not remove but did make inline, so
     # libui no longer exports it. libshims/ui_shim.cpp is that one symbol.
-    (
+    both(
         'vendor/lib64/camera.device-external-impl-rk.so',
         'vendor/lib64/camera.device-internal-impl-rk.so',
     ): blob_fixup()
@@ -49,7 +131,7 @@ blob_fixups: blob_fixups_user_type = {
     # The list shrank with the RKR8 rebase: libGLES_mali and both camera impls
     # dropped graphics.common-V4 from their NEEDED entirely, so only the Arm
     # gralloc allocator and mapper still need the rewrite.
-    (
+    both(
         'vendor/bin/hw/android.hardware.graphics.allocator-V1-service',
         'vendor/lib64/hw/android.hardware.graphics.allocator-V1-arm.so',
         'vendor/lib64/hw/android.hardware.graphics.allocator-V1-bifrost.so',
@@ -59,7 +141,7 @@ blob_fixups: blob_fixups_user_type = {
     # Same problem for IAllocator: stock mixes V1 and V2 clients. Bumping a
     # client is safe; the V1 *service* is deliberately left alone, because
     # relinking a server would have it advertise methods it does not implement.
-    'vendor/lib64/hw/camera.rk30board.so': blob_fixup()
+    both('vendor/lib64/hw/camera.rk30board.so'): blob_fixup()
         .replace_needed(
             'android.hardware.graphics.allocator-V1-ndk.so',
             'android.hardware.graphics.allocator-V2-ndk.so',
@@ -74,8 +156,11 @@ blob_fixups: blob_fixups_user_type = {
         .add_needed('libcrypto_shim.so'),
     # Arm ships this as vulkan.mali.so and Rockchip renamed the file without
     # touching the ELF, which check_elf_file rejects.
-    'vendor/lib64/hw/vulkan.rk3576.so': blob_fixup()
+    both('vendor/lib64/hw/vulkan.rk3576.so'): blob_fixup()
         .fix_soname(),
+    # BRINGUP-NOTES.md 7.28.
+    'vendor/bin/hw/android.hardware.media.c2@1.1-service': blob_fixup()
+        .call(patch_componentstore_layout, need_tmp_dir=False),
     # cppbor::Item gained two virtual methods since Android 14, so the Android
     # 14 library is extracted rather than built (BRINGUP-NOTES.md section 7.7).
     # It cannot keep its own name, hence the rename in gen-proprietary-files.py
@@ -126,7 +211,7 @@ blob_fixups: blob_fixups_user_type = {
     #
     # camera.rk30board.so is new to this list: RKR8 gave it a libtinyxml2
     # dependency the RKR5 build did not have.
-    (
+    both(
         'vendor/bin/hw/android.hardware.camera.provider-V1-external-service-rk',
         'vendor/bin/hw/android.hardware.lights-service.rockchip',
         'vendor/lib64/android.hardware.camera.provider-V1-external-impl-rk.so',
@@ -166,14 +251,14 @@ blob_fixups: blob_fixups_user_type = {
     # GraphicBuffer or GraphicBufferMapper. librga.so imports neither (which is
     # what made 7.9 hold off), and composer@2.1-resources-v34 imports neither.
     # All 8 libui symbols this blob needs are exported by the v34 snapshot.
-    'vendor/lib64/hw/hwcomposer.rk30board.so': blob_fixup()
+    both('vendor/lib64/hw/hwcomposer.rk30board.so'): blob_fixup()
         .replace_needed('libui.so', 'libui-v34.so'),
     # librga.so declares libui.so and imports not one symbol from it. Left
     # alone it is the only remaining path by which the platform libui reaches
     # the composer process, so dropping it means that process holds exactly one
     # libui -- the v34 one -- instead of two with overlapping definitions. That
     # was 7.11's standing objection to using the snapshot here at all.
-    'vendor/lib64/librga.so': blob_fixup()
+    both('vendor/lib64/librga.so'): blob_fixup()
         .remove_needed('libui.so'),
 }  # fmt: skip
 

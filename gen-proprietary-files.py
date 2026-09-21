@@ -5,12 +5,9 @@ import os
 import re
 import sys
 
-# Khadas Edge-2L, Rockchip SDK ANDROID14_RKR8, built 2026-04-28. Same SoC and
-# the same Android 14 / vendor API level 34 as the H96 Max M9S dump this port
-# started from (RKR5, 2025-03-14), so every compat fixup in extract-files.py
-# still applies -- but ~16 months newer, and 64-bit only: it ships no 32-bit
-# vendor libraries at all. See BRINGUP-NOTES.md section 7.16.
-SRC = "/home/tomin/devel/AmlogicKitchen/edge-2l/level2"
+# FriendlyELEC NanoPi RK3576, Rockchip SDK ANDROID14_MS_RKR3, built 2026-06-01.
+# Dual-arch, and the only dump with the AI-PQ stack. BRINGUP-NOTES.md 7.25.
+SRC = "/home/tomin/devel/rk3576/aipq_20260601/out"
 
 # Files that LineageOS builds from source or that the device tree supplies.
 EXCLUDE_EXACT = {
@@ -49,11 +46,35 @@ EXCLUDE_EXACT = {
     # wholesale, which would silently undo the density and config_maxUiWidth
     # work in BRINGUP-NOTES.md 7.15 among much else.
     "vendor/overlay/framework-res__auto_generated_rro_vendor.apk",
-    # New in RKR8 and unloadable here: nothing in the dump names it in
-    # DT_NEEDED, and it wants libandroidicu.so, which lives in the
-    # com.android.i18n APEX and is not reachable from a vendor process. It
-    # passes check_elf and then fails check-vendor-symbols.py.
-    "vendor/lib64/libcam_facedetection.so",
+    # Already installed by the board tree (27330000_pwm.kl) or by
+    # device/lineage/atv. Re-derive with:
+    #   comm -12 <(ls device/lineage/atv/keylayout | sort) \
+    #            <(ls $SRC/vendor/usr/keylayout | sort)
+    "vendor/usr/keylayout/27330000_pwm.kl",
+    "vendor/usr/keylayout/Vendor_0002_Product_0002.kl",
+    "vendor/usr/keylayout/Vendor_000d_Product_3838.kl",
+    "vendor/usr/keylayout/Vendor_000d_Product_3839.kl",
+    "vendor/usr/keylayout/Vendor_005d_Product_0001.kl",
+    "vendor/usr/keylayout/Vendor_005d_Product_0002.kl",
+    "vendor/usr/keylayout/Vendor_0484_Product_5738.kl",
+    "vendor/usr/keylayout/Vendor_0508_Product_0110.kl",
+    "vendor/usr/keylayout/Vendor_0957_Product_0006.kl",
+    "vendor/usr/keylayout/Vendor_0c45_Product_1109.kl",
+    "vendor/usr/keylayout/Vendor_1915_Product_0001.kl",
+    "vendor/usr/keylayout/Vendor_1d5a_Product_c081.kl",
+    "vendor/usr/keylayout/Vendor_1d5a_Product_c082.kl",
+    "vendor/usr/keylayout/Vendor_7045_Product_1820.kl",
+    "vendor/usr/keylayout/Vendor_7545_Product_0021.kl",
+    "vendor/usr/keylayout/Vendor_7545_Product_0180.kl",
+    "vendor/usr/keylayout/Vendor_7545_Product_0190.kl",
+    # 1.2 MB of recovery patch data for an OTA path this tree does not use.
+    "vendor/etc/recovery-resource.dat",
+    # The whole usb_modeswitch feature; its configs are excluded below anyway.
+    "vendor/bin/usb_modeswitch",
+    "vendor/bin/init.usbmod.sh",
+    "vendor/lib64/libusb.so",
+    # Would outrank the density and config_maxUiWidth set in the overlay.
+    "vendor/etc/displayconfig/default.xml",
     # 7.4 MB of sample clips for Rockchip's PQ/codec demo tools.
     "vendor/etc/1080p.h264",
     "vendor/etc/1080p.jpg",
@@ -99,8 +120,6 @@ EXCLUDE_EXACT = {
     "vendor/bin/hw/android.hardware.drm-service.clearkey",
     "vendor/etc/init/android.hardware.drm-service.clearkey.rc",
     "vendor/etc/vintf/manifest/android.hardware.drm-service.clearkey.xml",
-    # Goes with the CAS service dropped above, so nothing would load it.
-    "vendor/lib64/mediacas/libclearkeycasplugin.so",
     # Declares ISensors/default, but stock ships no implementation of it at all.
     # A declared-but-absent AIDL HAL loops the boot animation: system_server's
     # SensorDevice blocks forever waiting for it. sensors is optional in the
@@ -110,7 +129,6 @@ EXCLUDE_EXACT = {
     # and brings its own bluetooth_audio.xml and libbluetooth_audio_session_aidl,
     # so the stock copies would collide on the same install paths.
     "vendor/etc/vintf/manifest/bluetooth_audio.xml",
-    "vendor/lib64/libbluetooth_audio_session_aidl.so",
 }
 
 # --- Soong module name collisions with AOSP ---
@@ -201,6 +219,7 @@ EXCLUDE_PREFIX = (
 # install-recovery.sh are in no product package list and are simply absent.
 EXCLUDE_BINS = {
     "vendor/bin/abc", "vendor/bin/applypatch", "vendor/bin/awk",
+    "vendor/bin/boringssl_self_test32",
     "vendor/bin/boringssl_self_test64",
     "vendor/bin/dumpsys", "vendor/bin/logwrapper", "vendor/bin/sh",
     "vendor/bin/toolbox", "vendor/bin/toybox_vendor", "vendor/bin/vndservice",
@@ -308,17 +327,22 @@ AOSP_SOURCE_LIBS = {
     "libdrmclearkeyplugin.so",
     # TV input HIDL wrapper (rockchip.hardware.tv.input is the implementation).
     "android.hardware.tv.input@1.0-impl.so",
-    # RIL. Nothing loads these, but stock shipped them.
-    "libril.so", "librilutils.so", "libreference-ril.so",
     # Plain utility libraries.
     "libmemunreachable.so", "libmediautils_vendor.so", "libbinderdebug.so",
     "libz_stable.so", "local_time.default.so",
 }
 
+# AIC8800 firmware, matched to the driver and not to the board. Excluded from
+# SRC and pinned from the Edge-2L dump below. BRINGUP-NOTES.md 7.26.
+AIC_FW_RE = re.compile(
+    r"^vendor/etc/firmware/(fmacfw|fw_patch|fw_adid|lmacfw|aic_)")
+
+EDGE2L = "/home/tomin/devel/AmlogicKitchen/edge-2l/level2"
+
 # --- Blobs pinned from a second dump ---
 # Emitted as "path|sha1", hashed from the named dump; extract-utils restores
 # pinned files from the vendor tree instead of SRC. See README.md.
-# Each entry: (section title, source dump, comment lines, paths).
+# Each entry: (section title, source dump, comment lines, paths-or-regex).
 PINNED = [
     (
         "AIC8800 Bluetooth firmware",
@@ -336,9 +360,34 @@ PINNED = [
             "vendor/etc/firmware/fmacfw_patch_tbl_8800dc_hbt_u02.bin",
         ],
     ),
+    (
+        "AIC8800 Wi-Fi/BT firmware",
+        EDGE2L,
+        [
+            "Pinned from the Khadas Edge-2L ROM (ANDROID14_RKR8), which is the",
+            "set the aic8800_bsp driver in kernel/rockchip/kernel-modules is",
+            "built against. Taking the main dump's newer set panics the kernel",
+            "in aicbt_patch_info_unpack(). BRINGUP-NOTES.md 7.26.",
+        ],
+        AIC_FW_RE,
+    ),
 ]
 
+# --- Excluded libraries, either bitness ---
+# Matched on basename under vendor/lib{,64} and its subdirectories.
+EXCLUDE_LIB_BASENAMES = {
+    # Unloadable: wants libandroidicu.so out of the com.android.i18n APEX.
+    "libcam_facedetection.so",
+    # Goes with the CAS service dropped above.
+    "libclearkeycasplugin.so",
+    # AOSP's android.hardware.bluetooth.audio-impl is built instead.
+    "libbluetooth_audio_session_aidl.so",
+    # RIL: no modem on this board, and no radio HAL in the manifest.
+    "libril.so", "librilutils.so", "libreference-ril.so",
+}
+
 VENDOR_LIB_RE = re.compile(r"^vendor/lib(64)?/[^/]+$")
+ANY_VENDOR_LIB_RE = re.compile(r"^vendor/lib(?:64)?/(?:[^/]+/)*([^/]+)$")
 AOSP_SOURCE_LIB_RE = re.compile(
     r"^vendor/lib(64)?/(?:hw/|soundfx/|mediadrm/)?([^/]+)$")
 
@@ -367,6 +416,11 @@ def is_excluded(path):
         return True
     if path.startswith(EXCLUDE_PREFIX):
         return True
+    if AIC_FW_RE.match(path):
+        return True
+    m = ANY_VENDOR_LIB_RE.match(path)
+    if m and m.group(1) in EXCLUDE_LIB_BASENAMES:
+        return True
     if VENDOR_LIB_RE.match(path) and is_aosp_lib(os.path.basename(path)):
         return True
     if is_aosp_source_lib(path):
@@ -383,6 +437,14 @@ def pinned_sections():
     """Emit the PINNED entries as sections, each file with its source hash."""
     out = []
     for title, src, comment, paths in PINNED:
+        if hasattr(paths, "search"):
+            paths = sorted(
+                rel
+                for rel in walk_vendor(src)
+                if paths.match(rel)
+            )
+            if not paths:
+                sys.exit("no pinned files matched in %s" % src)
         out.append("")
         out.append("## %s" % title)
         out.extend("## %s" % line for line in comment)
@@ -394,17 +456,18 @@ def pinned_sections():
     return out
 
 
-def collect():
-    files = []
-    for root, _dirs, names in os.walk(os.path.join(SRC, "vendor")):
+def walk_vendor(src):
+    """Every non-symlink path under <src>/vendor, relative to <src>."""
+    for root, _dirs, names in os.walk(os.path.join(src, "vendor")):
         for n in names:
             full = os.path.join(root, n)
             if os.path.islink(full):
                 continue
-            rel = os.path.relpath(full, SRC)
-            if not is_excluded(rel):
-                files.append(rel)
-    return sorted(files)
+            yield os.path.relpath(full, src)
+
+
+def collect():
+    return sorted(f for f in walk_vendor(SRC) if not is_excluded(f))
 
 
 # --- Section layout ---
@@ -477,9 +540,9 @@ def main():
             if f not in assigned and pred(f):
                 assigned[f] = name
     out = []
-    out.append("## All blobs are from the Khadas Edge-2L stock firmware")
-    out.append("## Edge-2L-Android-14-V20260428, Rockchip SDK ANDROID14_RKR8")
-    out.append("## (Android 14, SDK 34, vendor API level 34) -- 64-bit only.")
+    out.append("## All blobs are from the FriendlyELEC NanoPi RK3576 stock")
+    out.append("## firmware, built 2026-06-01, Rockchip SDK ANDROID14_MS_RKR3")
+    out.append("## (Android 14, SDK 34, vendor API level 34) -- both bitnesses.")
 
     def spec(f):
         """Emit "src[:dst][;args]" -- dst rename and Soong module rename."""
@@ -499,11 +562,12 @@ def main():
         out.append("")
         out.append("## %s" % name)
         out.extend(spec(f) for f in group)
-    out.extend(pinned_sections())
+    pinned = pinned_sections()
+    out.extend(pinned)
     out.append("")
     sys.stdout.write("\n".join(out))
     sys.stderr.write("total blobs: %d in %d sections, plus %d pinned\n" % (
-        len(files), len(names) + 1, sum(len(p[3]) for p in PINNED)))
+        len(files), len(names) + 1, sum(1 for l in pinned if "|" in l)))
 
 
 if __name__ == "__main__":
