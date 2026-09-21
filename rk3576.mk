@@ -48,6 +48,11 @@ PRODUCT_BUILD_SYSTEM_DLKM_IMAGE := true
 PRODUCT_PACKAGES += \
     android.hardware.media.bufferpool2-V1-ndk.vendor
 
+# display settings. AiPQ
+PRODUCT_PACKAGES += \
+    RkAiPqSettings \
+    TvSettingsAipqOverlay
+
 # The two Wi-Fi blobs carry ;DISABLE_DEPS and declare nothing, so their
 # dependencies cannot be expressed as shared_libs. libcrypto_shim_rk (sk_dup)
 # and libcrypto_shim (CBS_init) are the two shims blob_fixups add to

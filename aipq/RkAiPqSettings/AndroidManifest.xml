@@ -1,0 +1,25 @@
+<?xml version="1.0" encoding="utf-8"?>
+<manifest xmlns:android="http://schemas.android.com/apk/res/android"
+    package="org.lineageos.rk3576.aipq">
+
+    <application android:label="@string/aipq_title">
+
+        <!-- Rendered by TvSettings (com.android.tv.settings) via its
+             SliceFragment; the entry point is added to the two-panel Device
+             page by TvSettingsAipqOverlay. -->
+        <provider
+            android:name=".AipqSliceProvider"
+            android:authorities="org.lineageos.rk3576.aipq"
+            android:exported="true"
+            android:grantUriPermissions="true">
+            <intent-filter>
+                <action android:name="android.intent.action.VIEW"/>
+                <category android:name="android.app.slice.category.SLICE"/>
+            </intent-filter>
+        </provider>
+
+        <receiver
+            android:name=".AipqBroadcastReceiver"
+            android:exported="false"/>
+    </application>
+</manifest>

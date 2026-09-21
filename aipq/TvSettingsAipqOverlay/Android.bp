@@ -1,0 +1,18 @@
+// Adds the AI PQ entry to the two-panel TvSettings Device page. The entry is
+// a plain Preference with android:fragment + <extra> only: TvSettings' two-
+// panel host starts fragments via Fragment.instantiate(ctx, fragment,
+// pref.getExtras()) (TwoPanelSettingsFragment.onPreferenceStartFragment), and
+// SliceFragment reads its URI from the TAG_TARGET_URI argument -- so no
+// custom attributes and no target-package resources are referenced, and the
+// overlay compiles without linking TwoPanelSettingsLib.
+//
+// Static + product partition + platform signature: the same shape as
+// device/google/atv's TvSettingsProviderOverlay (a product static overlay
+// targeting a system_ext app), legal because the platform signature satisfies
+// idmap2's signature policy for TvSettings' non-overlayable-declared resources.
+runtime_resource_overlay {
+    name: "TvSettingsAipqOverlay",
+    certificate: "platform",
+    product_specific: true,
+    sdk_version: "current",
+}

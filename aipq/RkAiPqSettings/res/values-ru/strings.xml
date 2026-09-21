@@ -1,0 +1,36 @@
+<?xml version="1.0" encoding="utf-8"?>
+<resources>
+    <string name="aipq_title">AI-качество изображения</string>
+
+    <string name="aipq_master_title">AIPQ</string>
+    <string name="aipq_master_summary">Общий переключатель; в положении Выкл конвейер AI-обработки изображения отключается</string>
+
+    <string name="aipq_sr_title">AI-SR</string>
+    <string name="aipq_sr_summary">Суперразрешение</string>
+    <string name="aipq_dc_title">AI-DC</string>
+    <string name="aipq_dc_summary">Управление затемнением</string>
+    <string name="aipq_memc_title">AI-MEMC</string>
+    <string name="aipq_memc_summary">Компенсация движения</string>
+
+    <string name="aipq_strength_off">Выкл</string>
+    <string name="aipq_strength_low">Слабая</string>
+    <string name="aipq_strength_medium">Средняя</string>
+    <string name="aipq_strength_strong">Сильная</string>
+
+    <string name="aipq_fe_title">AI-FE</string>
+    <string name="aipq_fe_summary">Улучшение лиц</string>
+    <string name="aipq_acm_title">AI-ACM</string>
+    <string name="aipq_acm_summary">Автоматическая коррекция цвета</string>
+    <string name="aipq_dci_title">AI-DCI</string>
+    <string name="aipq_dci_summary">Динамическое улучшение контрастности</string>
+    <string name="aipq_sd_title">AI-SD</string>
+    <string name="aipq_sd_summary">Определение сцены</string>
+
+    <string name="aipq_demo_title">Демонстрация обработки PQ</string>
+    <string name="aipq_demo_summary">Разделённый экран: слева с обработкой, справа без</string>
+    <string name="aipq_demo_on">Вкл</string>
+    <string name="aipq_demo_dynamic">Динамический</string>
+    <string name="aipq_demo_watermark">Только watermark</string>
+
+    <string name="aipq_note">Изменения вступают в силу при следующем воспроизведении.</string>
+</resources>

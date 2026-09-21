@@ -1,0 +1,14 @@
+<?xml version="1.0" encoding="utf-8"?>
+<!--
+  Compile-time stand-ins for the four target strings referenced by the
+  advanced_display.xml copy below. The names match com.android.tv.settings'
+  own resources, so idmap2 binds them to the target's entries and the runtime
+  text (and its localizations) comes from TvSettings, not from here.
+  Values copied from packages/apps/TvSettings (Apache-2.0).
+-->
+<resources>
+    <string name="advanced_display_settings_title" translatable="false">Advanced display settings</string>
+    <string name="game_mode_title" translatable="false">Allow game mode</string>
+    <string name="preferred_dynamic_range_title" translatable="false">Preferred dynamic range format</string>
+    <string name="hdr_format_selection_title" translatable="false">Allow dynamic range formats</string>
+</resources>

@@ -1,0 +1,56 @@
+<?xml version="1.0" encoding="utf-8"?>
+<!--
+  Replacement for com.android.tv.settings' res/xml/advanced_display.xml
+  (Device &amp; sound -> Advanced display settings), adding the AI Picture
+  Quality row that opens RkAiPqSettings' slice in the right pane.
+
+  Rules this file follows, because a runtime overlay must compile standalone
+  and inflate in the target's resource table (see BRINGUP-NOTES.md 7.33):
+
+  * Only resources that exist in the target by the same name are referenced
+    (the four strings re-declared in this overlay's values/, bound to the
+    target's own entries by idmap2).
+  * The upstream file's two EmbeddedSlicePreference rows are omitted: they
+    were custom:isPreferenceVisible="false" placeholders for GMS slices, and
+    they carry the custom: attributes the overlay cannot compile against.
+  * The added row uses stock attributes only. TvSettings' two-panel host
+    starts it through Fragment.instantiate(ctx, fragment, pref.getExtras()),
+    and com.android.tv.twopanelsettings.slices.SliceFragment reads its slice
+    URI from the TAG_TARGET_URI argument, so a plain <extra> is enough.
+-->
+<PreferenceScreen xmlns:android="http://schemas.android.com/apk/res/android"
+    android:title="@string/advanced_display_settings_title">
+
+    <Preference
+        android:key="rk_aipq_settings"
+        android:title="AI Picture Quality"
+        android:summary="Rockchip AI PQ runtime options"
+        android:fragment="com.android.tv.twopanelsettings.slices.SliceFragment">
+        <extra
+            android:name="TAG_TARGET_URI"
+            android:value="content://org.lineageos.rk3576.aipq/main"/>
+        <!-- No TAG_SCREEN_TITLE on purpose: the pane header then comes from
+             the slice's own addScreenTitle, which RkAiPqSettings localizes
+             (res/values-ru). The row title/summary above must stay literals:
+             an overlay cannot ship new resources referenced from a replaced
+             file, because idmap2 only rewrites references that have a
+             same-name counterpart in the target. -->
+    </Preference>
+
+    <com.android.tv.settings.widget.SwitchWithSoundPreference
+        android:key="game_mode"
+        android:persistent="true"
+        android:title="@string/game_mode_title"/>
+
+    <Preference
+        android:fragment="com.android.tv.settings.device.displaysound.PreferredDynamicRangeFragment"
+        android:key="preferred_dynamic_range_selection"
+        android:persistent="true"
+        android:title="@string/preferred_dynamic_range_title"/>
+
+    <Preference
+        android:fragment="com.android.tv.settings.device.displaysound.HdrFormatSelectionFragment"
+        android:key="hdr_format_selection"
+        android:persistent="true"
+        android:title="@string/hdr_format_selection_title"/>
+</PreferenceScreen>

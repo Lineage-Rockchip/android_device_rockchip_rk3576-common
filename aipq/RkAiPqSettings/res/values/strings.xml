@@ -1,0 +1,36 @@
+<?xml version="1.0" encoding="utf-8"?>
+<resources>
+    <string name="aipq_title">AI Picture Quality</string>
+
+    <string name="aipq_master_title">AIPQ</string>
+    <string name="aipq_master_summary">Master switch; off bypasses the AI picture pipeline</string>
+
+    <string name="aipq_sr_title">AI-SR</string>
+    <string name="aipq_sr_summary">Super resolution</string>
+    <string name="aipq_dc_title">AI-DC</string>
+    <string name="aipq_dc_summary">Dimming control</string>
+    <string name="aipq_memc_title">AI-MEMC</string>
+    <string name="aipq_memc_summary">Motion compensation</string>
+
+    <string name="aipq_strength_off">Off</string>
+    <string name="aipq_strength_low">Low</string>
+    <string name="aipq_strength_medium">Medium</string>
+    <string name="aipq_strength_strong">Strong</string>
+
+    <string name="aipq_fe_title">AI-FE</string>
+    <string name="aipq_fe_summary">Face enhancement</string>
+    <string name="aipq_acm_title">AI-ACM</string>
+    <string name="aipq_acm_summary">Auto color management</string>
+    <string name="aipq_dci_title">AI-DCI</string>
+    <string name="aipq_dci_summary">Dynamic contrast improvement</string>
+    <string name="aipq_sd_title">AI-SD</string>
+    <string name="aipq_sd_summary">Scene detection</string>
+
+    <string name="aipq_demo_title">PQ demo compare</string>
+    <string name="aipq_demo_summary">Split screen: processed left, bypassed right</string>
+    <string name="aipq_demo_on">On</string>
+    <string name="aipq_demo_dynamic">Dynamic</string>
+    <string name="aipq_demo_watermark">Watermark only</string>
+
+    <string name="aipq_note">Changes take effect on the next playback.</string>
+</resources>
