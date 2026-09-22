@@ -246,7 +246,9 @@ PRODUCT_COPY_FILES += \
 # Needed in the first-stage ramdisk and on /vendor for second stage.
 PRODUCT_COPY_FILES += \
     $(COMMON_PATH)/init-files/fstab.rk30board:$(TARGET_COPY_OUT_RAMDISK)/fstab.rk30board \
-    $(COMMON_PATH)/init-files/fstab.rk30board:$(TARGET_COPY_OUT_VENDOR)/etc/fstab.rk30board
+    $(COMMON_PATH)/init-files/fstab.rk30board:$(TARGET_COPY_OUT_VENDOR)/etc/fstab.rk30board \
+    $(COMMON_PATH)/init-files/init.system.rc:$(TARGET_COPY_OUT_SYSTEM)/etc/init/init.rockchip.rc
+
 
 ## Recovery init
 # Switches recovery's USB gadget to configfs, without which neither adb nor

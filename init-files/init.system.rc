@@ -1,0 +1,6 @@
+on post-fs-data
+    mkdir /data/misc/cfg_rockchip 0755 system system encryption=Require
+    mkdir /data/vendor/rkalgo 0775 system system encryption=Require
+
+on zygote-start
+    mkdir /data/vendor/vendorstorage 0770 root system encryption=Require
