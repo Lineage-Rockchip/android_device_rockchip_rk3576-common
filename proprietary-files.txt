@@ -564,6 +564,9 @@ vendor/lib64/libwifi-hal-skw.so;MODULE_SUFFIX=-rockchip
 vendor/lib64/libwifi-hal.so
 vendor/lib64/libwpa_client.so
 
+## Widevine
+vendor/apex/com.google.android.widevine.nonupdatable.apex
+
 ## Rockchip platform
 vendor/bin/amix
 vendor/bin/bitstream_test
