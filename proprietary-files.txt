@@ -208,11 +208,9 @@ vendor/etc/vintf/manifest/rockchip.hardware.outputmanager@1.0-service.xml
 vendor/lib/hw/hw_output.default.so
 vendor/lib/hw/rockchip.hardware.outputmanager@1.0-impl.so
 vendor/lib/libbaseparameter.so
-vendor/lib/rockchip.hardware.outputmanager@1.0.so
 vendor/lib64/hw/hw_output.default.so
 vendor/lib64/hw/rockchip.hardware.outputmanager@1.0-impl.so
 vendor/lib64/libbaseparameter.so
-vendor/lib64/rockchip.hardware.outputmanager@1.0.so
 
 ## Gatekeeper
 vendor/bin/hw/android.hardware.gatekeeper-service.optee

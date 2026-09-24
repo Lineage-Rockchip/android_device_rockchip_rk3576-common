@@ -30,6 +30,8 @@ public class AipqSliceProvider extends TvSettingsSliceProvider {
     public static final String AUTHORITY = "org.lineageos.rk3576.aipq";
     public static final Uri SLICE_URI =
             Uri.parse("content://" + AUTHORITY + "/main");
+    public static final Uri DISPLAY_URI =
+            Uri.parse("content://" + AUTHORITY + "/display");
 
     /** The renderer fills in this extra (SlicesConstants.EXTRA_PREFERENCE_KEY). */
     static final String EXTRA_PREFERENCE_KEY = "extra_preference_key";
@@ -55,6 +57,9 @@ public class AipqSliceProvider extends TvSettingsSliceProvider {
 
     @Override
     protected boolean createSlice(PreferenceSliceBuilder builder, Uri sliceUri) {
+        if (DISPLAY_URI.equals(sliceUri)) {
+            return createDisplaySlice(builder);
+        }
         if (!SLICE_URI.equals(sliceUri)) {
             return false;
         }
@@ -162,5 +167,54 @@ public class AipqSliceProvider extends TvSettingsSliceProvider {
         i.setClass(c, AipqBroadcastReceiver.class);
         i.putExtra(AipqBroadcastReceiver.EXTRA_KNOB, knob);
         return i;
+    }
+
+    /**
+     * Display picture page: brightness/contrast/saturation/hue as percent
+     * radios over the outputmanager HIDL. Steps of 10 -- the renderer's
+     * seekbar dispatch is key-only (see the class comment), so radios are the
+     * only stateless slider equivalent.
+     */
+    private boolean createDisplaySlice(PreferenceSliceBuilder builder) {
+        Context c = getContext();
+        builder.addScreenTitle(new RowBuilder()
+                .setTitle(c.getString(R.string.disp_title))
+                .setPageId(PAGE_ID + 1));
+        int[] bcsh = RkOutputClient.nativeGetBcsh(RkOutputClient.DISPLAY_MAIN);
+        if (bcsh == null) {
+            bcsh = RkOutputClient.DEFAULT_BCSH;
+            builder.addPreference(new RowBuilder()
+                    .setKey("disp_unavailable")
+                    .setTitle(c.getString(R.string.disp_unavailable))
+                    .setSelectable(false));
+        }
+        addBcshGroup(builder, c, AipqProps.KNOB_BRIGHTNESS,
+                R.string.disp_brightness, R.string.disp_brightness_summary, bcsh[0]);
+        addBcshGroup(builder, c, AipqProps.KNOB_CONTRAST,
+                R.string.disp_contrast, R.string.disp_contrast_summary, bcsh[1]);
+        addBcshGroup(builder, c, AipqProps.KNOB_SATURATION,
+                R.string.disp_saturation, R.string.disp_saturation_summary, bcsh[2]);
+        addBcshGroup(builder, c, AipqProps.KNOB_HUE,
+                R.string.disp_hue, R.string.disp_hue_summary, bcsh[3]);
+        return true;
+    }
+
+    private void addBcshGroup(PreferenceSliceBuilder builder, Context c,
+            String knob, int titleRes, int summaryRes, int current) {
+        builder.addPreference(new RowBuilder()
+                .setKey("disp_" + knob + "_header")
+                .setTitle(c.getString(titleRes))
+                .setSubtitle(c.getString(summaryRes))
+                .setSelectable(false));
+        for (int value = 0; value <= 100; value += 10) {
+            builder.addPreference(new RowBuilder()
+                    .setKey("disp_" + knob + "_" + value)
+                    .setTitle(String.valueOf(value))
+                    .setRadioGroup("disp_" + knob)
+                    .addRadioButton(
+                            knobIntent(c, knob)
+                                    .putExtra(AipqBroadcastReceiver.EXTRA_VALUE, value),
+                            current == value));
+        }
     }
 }

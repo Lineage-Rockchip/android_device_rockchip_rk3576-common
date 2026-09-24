@@ -62,10 +62,38 @@ public class AipqBroadcastReceiver extends BroadcastReceiver {
             case AipqProps.KNOB_DEMO:
                 AipqProps.applyDemo(context, intent.getIntExtra(EXTRA_VALUE, 0));
                 break;
+            case AipqProps.KNOB_BRIGHTNESS:
+                RkOutputClient.nativeSetBrightness(RkOutputClient.DISPLAY_MAIN,
+                        intent.getIntExtra(EXTRA_VALUE, 50));
+                break;
+            case AipqProps.KNOB_CONTRAST:
+                RkOutputClient.nativeSetContrast(RkOutputClient.DISPLAY_MAIN,
+                        intent.getIntExtra(EXTRA_VALUE, 50));
+                break;
+            case AipqProps.KNOB_SATURATION:
+                RkOutputClient.nativeSetSaturation(RkOutputClient.DISPLAY_MAIN,
+                        intent.getIntExtra(EXTRA_VALUE, 50));
+                break;
+            case AipqProps.KNOB_HUE:
+                RkOutputClient.nativeSetHue(RkOutputClient.DISPLAY_MAIN,
+                        intent.getIntExtra(EXTRA_VALUE, 50));
+                break;
             default:
                 return;
         }
-        TvSettingsSliceProvider.invalidateSlice(context, AipqSliceProvider.SLICE_URI);
+        switch (knob) {
+            case AipqProps.KNOB_BRIGHTNESS:
+            case AipqProps.KNOB_CONTRAST:
+            case AipqProps.KNOB_SATURATION:
+            case AipqProps.KNOB_HUE:
+                TvSettingsSliceProvider.invalidateSlice(context,
+                        AipqSliceProvider.DISPLAY_URI);
+                break;
+            default:
+                TvSettingsSliceProvider.invalidateSlice(context,
+                        AipqSliceProvider.SLICE_URI);
+                break;
+        }
     }
 
     /** Row keys are "aipq_<knob>", "aipq_<knob>_<value>" or "aipq_<knob>_group". */

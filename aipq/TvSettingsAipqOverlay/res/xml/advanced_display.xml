@@ -37,6 +37,16 @@
              same-name counterpart in the target. -->
     </Preference>
 
+    <Preference
+        android:key="rk_display_settings"
+        android:title="Display picture"
+        android:summary="Brightness, contrast, saturation, hue"
+        android:fragment="com.android.tv.twopanelsettings.slices.SliceFragment">
+        <extra
+            android:name="TAG_TARGET_URI"
+            android:value="content://org.lineageos.rk3576.aipq/display"/>
+    </Preference>
+
     <com.android.tv.settings.widget.SwitchWithSoundPreference
         android:key="game_mode"
         android:persistent="true"

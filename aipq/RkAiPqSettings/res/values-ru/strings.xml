@@ -33,4 +33,14 @@
     <string name="aipq_demo_watermark">Только watermark</string>
 
     <string name="aipq_note">Изменения вступают в силу при следующем воспроизведении.</string>
+    <string name="disp_title">Настройки изображения</string>
+    <string name="disp_unavailable">Служба управления дисплеем недоступна; показаны значения по умолчанию</string>
+    <string name="disp_brightness">Яркость</string>
+    <string name="disp_brightness_summary">Яркость изображения, процентов</string>
+    <string name="disp_contrast">Контрастность</string>
+    <string name="disp_contrast_summary">Контрастность изображения, процентов</string>
+    <string name="disp_saturation">Насыщенность</string>
+    <string name="disp_saturation_summary">Насыщенность цвета, процентов</string>
+    <string name="disp_hue">Оттенок</string>
+    <string name="disp_hue_summary">Смещение оттенка, процентов</string>
 </resources>

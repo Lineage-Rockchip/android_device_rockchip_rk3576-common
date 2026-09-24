@@ -17,6 +17,7 @@ android_app {
     certificate: "platform",
     privileged: true,
     system_ext_specific: true,
+    jni_libs: ["librkoutputmgr_jni"],
     static_libs: [
         "TvSliceLib",
         // TvSliceLib defers style/attr resolution to the consuming app; its
@@ -38,4 +39,25 @@ prebuilt_etc {
     system_ext_specific: true,
     src: "org.lineageos.rk3576.aipq.xml",
     filename_from_src: true,
+}
+
+// JNI client for the outputmanager HIDL (display picture settings). Links the
+// C++ stub of rockchip.hardware.outputmanager@1.0 -- vendored under
+// hardware/rockchip/interfaces -- the same system-side getService() pattern
+// the stock framework's own JNI uses. installable: false: it is packaged into
+// the app only.
+cc_library_shared {
+    name: "librkoutputmgr_jni",
+    srcs: ["jni/rk_output_jni.cpp"],
+    // Add this block to provide jni.h
+    header_libs: [
+        "jni_headers",
+    ],
+    shared_libs: [
+        "rockchip.hardware.outputmanager@1.0",
+        "libhidlbase",
+        "liblog",
+        "libutils",
+    ],
+
 }

@@ -32,6 +32,11 @@ final class AipqProps {
     static final String KNOB_DCI = "dci";
     static final String KNOB_SD = "sd";
     static final String KNOB_DEMO = "demo";
+    // Display picture knobs, applied over the outputmanager HIDL.
+    static final String KNOB_BRIGHTNESS = "brightness";
+    static final String KNOB_CONTRAST = "contrast";
+    static final String KNOB_SATURATION = "saturation";
+    static final String KNOB_HUE = "hue";
 
     // Strength values of the Off/Low/Medium/Strong lists.
     static final int[] STRENGTHS = {0, 50, 75, 100};

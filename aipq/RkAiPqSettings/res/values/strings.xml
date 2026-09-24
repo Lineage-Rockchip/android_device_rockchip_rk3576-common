@@ -33,4 +33,15 @@
     <string name="aipq_demo_watermark">Watermark only</string>
 
     <string name="aipq_note">Changes take effect on the next playback.</string>
+
+    <string name="disp_title">Display picture</string>
+    <string name="disp_unavailable">Display service unavailable; showing defaults</string>
+    <string name="disp_brightness">Brightness</string>
+    <string name="disp_brightness_summary">Picture brightness, percent</string>
+    <string name="disp_contrast">Contrast</string>
+    <string name="disp_contrast_summary">Picture contrast, percent</string>
+    <string name="disp_saturation">Saturation</string>
+    <string name="disp_saturation_summary">Color saturation, percent</string>
+    <string name="disp_hue">Hue</string>
+    <string name="disp_hue_summary">Hue shift, percent</string>
 </resources>
