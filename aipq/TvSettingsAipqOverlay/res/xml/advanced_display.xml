@@ -50,7 +50,7 @@
     <Preference
         android:key="rk_resolution_settings"
         android:title="HDMI output"
-        android:summary="Resolution and color format"
+        android:summary="Resolution, color format, HDR"
         android:fragment="com.android.tv.twopanelsettings.slices.SliceFragment">
         <extra
             android:name="TAG_TARGET_URI"

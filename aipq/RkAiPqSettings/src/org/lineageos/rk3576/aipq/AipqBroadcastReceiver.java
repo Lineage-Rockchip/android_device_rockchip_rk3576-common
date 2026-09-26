@@ -89,6 +89,11 @@ public class AipqBroadcastReceiver extends BroadcastReceiver {
                 TvSettingsSliceProvider.invalidateSlice(context,
                         AipqSliceProvider.RESOLUTION_URI);
                 return;
+            case AipqProps.KNOB_HDR:
+                RkOutputClient.setHdrEnabled(!RkOutputClient.isHdrEnabled());
+                TvSettingsSliceProvider.invalidateSlice(context,
+                        AipqSliceProvider.RESOLUTION_URI);
+                return;
             case AipqProps.KNOB_SCALE_H:
             case AipqProps.KNOB_SCALE_V:
                 RkOutputClient.setScale(RkOutputClient.DISPLAY_MAIN,

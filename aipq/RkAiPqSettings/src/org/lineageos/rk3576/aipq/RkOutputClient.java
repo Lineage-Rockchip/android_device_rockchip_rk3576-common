@@ -125,6 +125,18 @@ final class RkOutputClient {
         }
     }
 
+    static boolean isHdrEnabled() {
+        RkDisplayOutputManager m = manager();
+        return m == null || m.isHDR10Status();
+    }
+
+    static void setHdrEnabled(boolean enabled) {
+        RkDisplayOutputManager m = manager();
+        if (m != null) {
+            m.setHDR10Enabled(enabled);
+        }
+    }
+
     // {horizontal, vertical} percent; the HAL keeps left == right and top == bottom
     static int[] getScale(int dpy) {
         RkDisplayOutputManager m = manager();

@@ -39,6 +39,7 @@ final class AipqProps {
     static final String KNOB_HUE = "hue";
     static final String KNOB_RESOLUTION = "resolution";
     static final String KNOB_COLOR = "color";
+    static final String KNOB_HDR = "hdr";
     static final String KNOB_SCALE_H = "scale_h";
     static final String KNOB_SCALE_V = "scale_v";
 

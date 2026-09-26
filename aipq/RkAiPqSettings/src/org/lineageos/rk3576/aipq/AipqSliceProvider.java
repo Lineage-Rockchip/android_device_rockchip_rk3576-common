@@ -261,6 +261,14 @@ public class AipqSliceProvider extends TvSettingsSliceProvider {
                             mode.equals(current)));
         }
         addColorGroup(builder, c);
+        addHeader(builder, "hdr_header", c.getString(R.string.hdr_header));
+        String hdrTitle = c.getString(R.string.hdr_title);
+        builder.addPreference(new RowBuilder()
+                .setKey("hdr")
+                .setTitle(hdrTitle)
+                .setSubtitle(c.getString(R.string.hdr_summary))
+                .addSwitch(knobIntent(c, AipqProps.KNOB_HDR), hdrTitle,
+                        RkOutputClient.isHdrEnabled()));
         return true;
     }
 
