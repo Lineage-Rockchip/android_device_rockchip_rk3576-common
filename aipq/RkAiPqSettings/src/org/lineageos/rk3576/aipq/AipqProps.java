@@ -37,6 +37,7 @@ final class AipqProps {
     static final String KNOB_CONTRAST = "contrast";
     static final String KNOB_SATURATION = "saturation";
     static final String KNOB_HUE = "hue";
+    static final String KNOB_RESOLUTION = "resolution";
 
     // Strength values of the Off/Low/Medium/Strong lists.
     static final int[] STRENGTHS = {0, 50, 75, 100};

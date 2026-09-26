@@ -2,6 +2,8 @@
 <manifest xmlns:android="http://schemas.android.com/apk/res/android"
     package="org.lineageos.rk3576.aipq">
 
+    <uses-permission android:name="android.permission.START_ACTIVITIES_FROM_BACKGROUND"/>
+
     <application android:label="@string/aipq_title">
 
         <!-- Rendered by TvSettings (com.android.tv.settings) via its
@@ -21,5 +23,13 @@
         <receiver
             android:name=".AipqBroadcastReceiver"
             android:exported="false"/>
+
+        <activity
+            android:name=".ResolutionConfirmActivity"
+            android:exported="false"
+            android:excludeFromRecents="true"
+            android:noHistory="true"
+            android:configChanges="orientation|screenSize|screenLayout|smallestScreenSize|density|keyboard|keyboardHidden|navigation"
+            android:theme="@android:style/Theme.Translucent.NoTitleBar"/>
     </application>
 </manifest>

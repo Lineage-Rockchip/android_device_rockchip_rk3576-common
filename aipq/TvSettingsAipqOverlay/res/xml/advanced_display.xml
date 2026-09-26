@@ -47,6 +47,16 @@
             android:value="content://org.lineageos.rk3576.aipq/display"/>
     </Preference>
 
+    <Preference
+        android:key="rk_resolution_settings"
+        android:title="Output resolution"
+        android:summary="HDMI output mode"
+        android:fragment="com.android.tv.twopanelsettings.slices.SliceFragment">
+        <extra
+            android:name="TAG_TARGET_URI"
+            android:value="content://org.lineageos.rk3576.aipq/resolution"/>
+    </Preference>
+
     <com.android.tv.settings.widget.SwitchWithSoundPreference
         android:key="game_mode"
         android:persistent="true"

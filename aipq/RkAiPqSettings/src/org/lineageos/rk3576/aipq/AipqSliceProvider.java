@@ -32,6 +32,8 @@ public class AipqSliceProvider extends TvSettingsSliceProvider {
             Uri.parse("content://" + AUTHORITY + "/main");
     public static final Uri DISPLAY_URI =
             Uri.parse("content://" + AUTHORITY + "/display");
+    public static final Uri RESOLUTION_URI =
+            Uri.parse("content://" + AUTHORITY + "/resolution");
 
     /** The renderer fills in this extra (SlicesConstants.EXTRA_PREFERENCE_KEY). */
     static final String EXTRA_PREFERENCE_KEY = "extra_preference_key";
@@ -59,6 +61,9 @@ public class AipqSliceProvider extends TvSettingsSliceProvider {
     protected boolean createSlice(PreferenceSliceBuilder builder, Uri sliceUri) {
         if (DISPLAY_URI.equals(sliceUri)) {
             return createDisplaySlice(builder);
+        }
+        if (RESOLUTION_URI.equals(sliceUri)) {
+            return createResolutionSlice(builder);
         }
         if (!SLICE_URI.equals(sliceUri)) {
             return false;
@@ -180,7 +185,7 @@ public class AipqSliceProvider extends TvSettingsSliceProvider {
         builder.addScreenTitle(new RowBuilder()
                 .setTitle(c.getString(R.string.disp_title))
                 .setPageId(PAGE_ID + 1));
-        int[] bcsh = RkOutputClient.nativeGetBcsh(RkOutputClient.DISPLAY_MAIN);
+        int[] bcsh = RkOutputClient.getBcsh(RkOutputClient.DISPLAY_MAIN);
         if (bcsh == null) {
             bcsh = RkOutputClient.DEFAULT_BCSH;
             builder.addPreference(new RowBuilder()
@@ -216,5 +221,35 @@ public class AipqSliceProvider extends TvSettingsSliceProvider {
                                     .putExtra(AipqBroadcastReceiver.EXTRA_VALUE, value),
                             current == value));
         }
+    }
+
+    private boolean createResolutionSlice(PreferenceSliceBuilder builder) {
+        Context c = getContext();
+        builder.addScreenTitle(new RowBuilder()
+                .setTitle(c.getString(R.string.res_title))
+                .setPageId(PAGE_ID + 2));
+        String[] modes = RkOutputClient.getModes(RkOutputClient.DISPLAY_MAIN);
+        if (modes == null || modes.length == 0) {
+            builder.addPreference(new RowBuilder()
+                    .setKey("res_unavailable")
+                    .setTitle(c.getString(R.string.disp_unavailable))
+                    .setSelectable(false));
+            return true;
+        }
+        String current = RkOutputClient.getMode(RkOutputClient.DISPLAY_MAIN);
+        for (int i = 0; i < modes.length; i++) {
+            String mode = modes[i];
+            boolean auto = RkOutputClient.MODE_AUTO.equals(mode);
+            builder.addPreference(new RowBuilder()
+                    .setKey("res_" + i)
+                    .setTitle(auto ? c.getString(R.string.res_auto)
+                            : RkOutputClient.modeLabel(mode))
+                    .setRadioGroup("res")
+                    .addRadioButton(
+                            knobIntent(c, AipqProps.KNOB_RESOLUTION)
+                                    .putExtra(AipqBroadcastReceiver.EXTRA_MODE, mode),
+                            mode.equals(current)));
+        }
+        return true;
     }
 }

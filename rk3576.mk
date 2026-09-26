@@ -53,6 +53,9 @@ PRODUCT_PACKAGES += \
     RkAiPqSettings \
     TvSettingsAipqOverlay
 
+# Rockchip display management service (drm_device_management), in system_server
+$(call inherit-product, hardware/rockchip/fwkservices/fwkservices.mk)
+
 # The two Wi-Fi blobs carry ;DISABLE_DEPS and declare nothing, so their
 # dependencies cannot be expressed as shared_libs. libcrypto_shim_rk (sk_dup)
 # and libcrypto_shim (CBS_init) are the two shims blob_fixups add to

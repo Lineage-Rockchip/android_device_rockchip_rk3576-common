@@ -43,4 +43,11 @@
     <string name="disp_saturation_summary">Насыщенность цвета, процентов</string>
     <string name="disp_hue">Оттенок</string>
     <string name="disp_hue_summary">Смещение оттенка, процентов</string>
+
+    <string name="res_title">Разрешение выхода</string>
+    <string name="res_auto">Авто</string>
+    <string name="res_confirm_title">Сохранить это разрешение?</string>
+    <string name="res_confirm_message">Выход переключён на %1$s. Возврат через %2$d с.</string>
+    <string name="res_confirm_keep">Сохранить</string>
+    <string name="res_confirm_revert">Вернуть</string>
 </resources>

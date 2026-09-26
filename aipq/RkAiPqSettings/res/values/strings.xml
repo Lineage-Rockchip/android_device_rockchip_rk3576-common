@@ -44,4 +44,11 @@
     <string name="disp_saturation_summary">Color saturation, percent</string>
     <string name="disp_hue">Hue</string>
     <string name="disp_hue_summary">Hue shift, percent</string>
+
+    <string name="res_title">Output resolution</string>
+    <string name="res_auto">Auto</string>
+    <string name="res_confirm_title">Keep this resolution?</string>
+    <string name="res_confirm_message">Output switched to %1$s. Reverting in %2$d s.</string>
+    <string name="res_confirm_keep">Keep</string>
+    <string name="res_confirm_revert">Revert</string>
 </resources>

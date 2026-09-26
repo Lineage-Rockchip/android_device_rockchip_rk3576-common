@@ -242,6 +242,7 @@ DEVICE_FRAMEWORK_COMPATIBILITY_MATRIX_FILE += \
 ## SELinux
 # BRING-UP ONLY -- stock boots permissive too.
 BOARD_SEPOLICY_DIRS += $(COMMON_PATH)/sepolicy/vendor
+include hardware/rockchip/fwkservices/BoardConfig.mk
 SELINUX_IGNORE_NEVERALLOWS := true
 
 ## Properties

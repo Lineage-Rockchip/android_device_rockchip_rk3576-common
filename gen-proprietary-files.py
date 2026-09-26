@@ -384,10 +384,10 @@ EXCLUDE_LIB_BASENAMES = {
     "libbluetooth_audio_session_aidl.so",
     # RIL: no modem on this board, and no radio HAL in the manifest.
     "libril.so", "librilutils.so", "libreference-ril.so",
-    # Built from the .hal vendored under hardware/rockchip/interfaces (same
+    # Built from the .hal vendored in hardware/rockchip/interfaces (same
     # source the blobs were generated from), so the in-tree module provides
     # both the vendor variant -- installed through the impl blob's DT_NEEDED
-    # -- and the system variant our RkAiPqSettings JNI links. Shipping the
+    # -- and the system variant librockchip_servers links. Shipping the
     # extracted .so collides with the built one (partition mismatch).
     "rockchip.hardware.outputmanager@1.0.so",
 }

@@ -20,6 +20,7 @@ public class AipqBroadcastReceiver extends BroadcastReceiver {
     static final String ACTION_KNOB = "org.lineageos.rk3576.aipq.action.KNOB";
     static final String EXTRA_KNOB = "knob";
     static final String EXTRA_VALUE = "value";
+    static final String EXTRA_MODE = "mode";
 
     @Override
     public void onReceive(Context context, Intent intent) {
@@ -63,21 +64,26 @@ public class AipqBroadcastReceiver extends BroadcastReceiver {
                 AipqProps.applyDemo(context, intent.getIntExtra(EXTRA_VALUE, 0));
                 break;
             case AipqProps.KNOB_BRIGHTNESS:
-                RkOutputClient.nativeSetBrightness(RkOutputClient.DISPLAY_MAIN,
+                RkOutputClient.setBrightness(RkOutputClient.DISPLAY_MAIN,
                         intent.getIntExtra(EXTRA_VALUE, 50));
                 break;
             case AipqProps.KNOB_CONTRAST:
-                RkOutputClient.nativeSetContrast(RkOutputClient.DISPLAY_MAIN,
+                RkOutputClient.setContrast(RkOutputClient.DISPLAY_MAIN,
                         intent.getIntExtra(EXTRA_VALUE, 50));
                 break;
             case AipqProps.KNOB_SATURATION:
-                RkOutputClient.nativeSetSaturation(RkOutputClient.DISPLAY_MAIN,
+                RkOutputClient.setSaturation(RkOutputClient.DISPLAY_MAIN,
                         intent.getIntExtra(EXTRA_VALUE, 50));
                 break;
             case AipqProps.KNOB_HUE:
-                RkOutputClient.nativeSetHue(RkOutputClient.DISPLAY_MAIN,
+                RkOutputClient.setHue(RkOutputClient.DISPLAY_MAIN,
                         intent.getIntExtra(EXTRA_VALUE, 50));
                 break;
+            case AipqProps.KNOB_RESOLUTION:
+                applyResolution(context, intent.getStringExtra(EXTRA_MODE));
+                TvSettingsSliceProvider.invalidateSlice(context,
+                        AipqSliceProvider.RESOLUTION_URI);
+                return;
             default:
                 return;
         }
@@ -94,6 +100,18 @@ public class AipqBroadcastReceiver extends BroadcastReceiver {
                         AipqSliceProvider.SLICE_URI);
                 break;
         }
+    }
+
+    private static void applyResolution(Context context, String mode) {
+        String previous = RkOutputClient.getMode(RkOutputClient.DISPLAY_MAIN);
+        if (mode == null || mode.equals(previous)) {
+            return;
+        }
+        RkOutputClient.setMode(RkOutputClient.DISPLAY_MAIN, mode);
+        context.startActivity(new Intent(context, ResolutionConfirmActivity.class)
+                .addFlags(Intent.FLAG_ACTIVITY_NEW_TASK)
+                .putExtra(ResolutionConfirmActivity.EXTRA_MODE, mode)
+                .putExtra(ResolutionConfirmActivity.EXTRA_PREVIOUS, previous));
     }
 
     /** Row keys are "aipq_<knob>", "aipq_<knob>_<value>" or "aipq_<knob>_group". */
