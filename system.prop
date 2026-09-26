@@ -5,3 +5,6 @@ fs_mgr.overlayfs.prefer_cache_backing_storage=true
 ro.logd.kernel=1
 ro.logd.size.stats=64K
 tombstoned.max_tombstone_count=50
+
+# BUILD_FINGERPRINT is pinned, so the package parser cache never invalidates across flashes
+pm.boot.disable_package_cache=true
