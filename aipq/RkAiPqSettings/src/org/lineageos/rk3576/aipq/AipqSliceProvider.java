@@ -34,11 +34,17 @@ public class AipqSliceProvider extends TvSettingsSliceProvider {
             Uri.parse("content://" + AUTHORITY + "/display");
     public static final Uri RESOLUTION_URI =
             Uri.parse("content://" + AUTHORITY + "/resolution");
+    public static final Uri SCALE_URI =
+            Uri.parse("content://" + AUTHORITY + "/scale");
 
     /** The renderer fills in this extra (SlicesConstants.EXTRA_PREFERENCE_KEY). */
     static final String EXTRA_PREFERENCE_KEY = "extra_preference_key";
 
     private static final int PAGE_ID = 990001; // TvSettingsEnums-namespace-free logging id
+
+    // Rockchip's ScreenScaleActivity range
+    private static final int SCALE_MIN = 80;
+    private static final int SCALE_STEP = 2;
 
     @Override
     public boolean onCreateSliceProvider() {
@@ -64,6 +70,9 @@ public class AipqSliceProvider extends TvSettingsSliceProvider {
         }
         if (RESOLUTION_URI.equals(sliceUri)) {
             return createResolutionSlice(builder);
+        }
+        if (SCALE_URI.equals(sliceUri)) {
+            return createScaleSlice(builder);
         }
         if (!SLICE_URI.equals(sliceUri)) {
             return false;
@@ -236,6 +245,7 @@ public class AipqSliceProvider extends TvSettingsSliceProvider {
                     .setSelectable(false));
             return true;
         }
+        addHeader(builder, "res_header", c.getString(R.string.res_header));
         String current = RkOutputClient.getMode(RkOutputClient.DISPLAY_MAIN);
         for (int i = 0; i < modes.length; i++) {
             String mode = modes[i];
@@ -250,6 +260,68 @@ public class AipqSliceProvider extends TvSettingsSliceProvider {
                                     .putExtra(AipqBroadcastReceiver.EXTRA_MODE, mode),
                             mode.equals(current)));
         }
+        addColorGroup(builder, c);
         return true;
+    }
+
+    private void addColorGroup(PreferenceSliceBuilder builder, Context c) {
+        String[] formats = RkOutputClient.getColorModes(RkOutputClient.DISPLAY_MAIN);
+        if (formats == null || formats.length == 0) {
+            return;
+        }
+        addHeader(builder, "color_header", c.getString(R.string.color_header));
+        String current = RkOutputClient.getColorMode(RkOutputClient.DISPLAY_MAIN);
+        for (int i = 0; i < formats.length; i++) {
+            String format = formats[i];
+            boolean auto = RkOutputClient.MODE_AUTO.equals(format);
+            builder.addPreference(new RowBuilder()
+                    .setKey("color_" + i)
+                    .setTitle(auto ? c.getString(R.string.res_auto) : format)
+                    .setRadioGroup("color")
+                    .addRadioButton(
+                            knobIntent(c, AipqProps.KNOB_COLOR)
+                                    .putExtra(AipqBroadcastReceiver.EXTRA_MODE, format),
+                            format.equals(current)));
+        }
+    }
+
+    private boolean createScaleSlice(PreferenceSliceBuilder builder) {
+        Context c = getContext();
+        builder.addScreenTitle(new RowBuilder()
+                .setTitle(c.getString(R.string.scale_title))
+                .setPageId(PAGE_ID + 3));
+        int[] scale = RkOutputClient.getScale(RkOutputClient.DISPLAY_MAIN);
+        if (scale == null) {
+            builder.addPreference(new RowBuilder()
+                    .setKey("scale_unavailable")
+                    .setTitle(c.getString(R.string.disp_unavailable))
+                    .setSelectable(false));
+            return true;
+        }
+        addScaleGroup(builder, c, AipqProps.KNOB_SCALE_H, R.string.scale_horizontal, scale[0]);
+        addScaleGroup(builder, c, AipqProps.KNOB_SCALE_V, R.string.scale_vertical, scale[1]);
+        return true;
+    }
+
+    private void addScaleGroup(PreferenceSliceBuilder builder, Context c, String knob,
+            int titleRes, int current) {
+        addHeader(builder, knob + "_header", c.getString(titleRes));
+        for (int value = 100; value >= SCALE_MIN; value -= SCALE_STEP) {
+            builder.addPreference(new RowBuilder()
+                    .setKey(knob + "_" + value)
+                    .setTitle(value + "%")
+                    .setRadioGroup(knob)
+                    .addRadioButton(
+                            knobIntent(c, knob)
+                                    .putExtra(AipqBroadcastReceiver.EXTRA_VALUE, value),
+                            current == value));
+        }
+    }
+
+    private static void addHeader(PreferenceSliceBuilder builder, String key, String title) {
+        builder.addPreference(new RowBuilder()
+                .setKey(key)
+                .setTitle(title)
+                .setSelectable(false));
     }
 }

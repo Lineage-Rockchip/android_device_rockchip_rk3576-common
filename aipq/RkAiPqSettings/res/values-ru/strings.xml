@@ -44,10 +44,16 @@
     <string name="disp_hue">Оттенок</string>
     <string name="disp_hue_summary">Смещение оттенка, процентов</string>
 
-    <string name="res_title">Разрешение выхода</string>
+    <string name="res_title">Выход HDMI</string>
     <string name="res_auto">Авто</string>
     <string name="res_confirm_title">Сохранить это разрешение?</string>
     <string name="res_confirm_message">Выход переключён на %1$s. Возврат через %2$d с.</string>
     <string name="res_confirm_keep">Сохранить</string>
     <string name="res_confirm_revert">Вернуть</string>
+    <string name="res_header">Разрешение</string>
+    <string name="color_header">Цветовой формат</string>
+    <string name="color_confirm_title">Сохранить этот цветовой формат?</string>
+    <string name="scale_title">Масштаб экрана</string>
+    <string name="scale_horizontal">Размер по горизонтали</string>
+    <string name="scale_vertical">Размер по вертикали</string>
 </resources>

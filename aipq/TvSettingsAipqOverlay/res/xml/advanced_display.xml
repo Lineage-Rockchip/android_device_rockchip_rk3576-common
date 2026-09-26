@@ -49,12 +49,22 @@
 
     <Preference
         android:key="rk_resolution_settings"
-        android:title="Output resolution"
-        android:summary="HDMI output mode"
+        android:title="HDMI output"
+        android:summary="Resolution and color format"
         android:fragment="com.android.tv.twopanelsettings.slices.SliceFragment">
         <extra
             android:name="TAG_TARGET_URI"
             android:value="content://org.lineageos.rk3576.aipq/resolution"/>
+    </Preference>
+
+    <Preference
+        android:key="rk_scale_settings"
+        android:title="Screen scale"
+        android:summary="Shrink the picture to fit a TV that crops edges"
+        android:fragment="com.android.tv.twopanelsettings.slices.SliceFragment">
+        <extra
+            android:name="TAG_TARGET_URI"
+            android:value="content://org.lineageos.rk3576.aipq/scale"/>
     </Preference>
 
     <com.android.tv.settings.widget.SwitchWithSoundPreference

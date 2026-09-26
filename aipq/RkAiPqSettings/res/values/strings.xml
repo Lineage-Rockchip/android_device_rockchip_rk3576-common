@@ -45,10 +45,16 @@
     <string name="disp_hue">Hue</string>
     <string name="disp_hue_summary">Hue shift, percent</string>
 
-    <string name="res_title">Output resolution</string>
+    <string name="res_title">HDMI output</string>
     <string name="res_auto">Auto</string>
     <string name="res_confirm_title">Keep this resolution?</string>
     <string name="res_confirm_message">Output switched to %1$s. Reverting in %2$d s.</string>
     <string name="res_confirm_keep">Keep</string>
     <string name="res_confirm_revert">Revert</string>
+    <string name="res_header">Resolution</string>
+    <string name="color_header">Color format</string>
+    <string name="color_confirm_title">Keep this color format?</string>
+    <string name="scale_title">Screen scale</string>
+    <string name="scale_horizontal">Horizontal size</string>
+    <string name="scale_vertical">Vertical size</string>
 </resources>

@@ -1,5 +1,6 @@
 package org.lineageos.rk3576.aipq;
 
+import android.graphics.Rect;
 import android.os.RkDisplayOutputManager;
 import android.os.ServiceManager;
 
@@ -65,6 +66,12 @@ final class RkOutputClient {
 
     static final String MODE_AUTO = "Auto";
 
+    // hw_output's hw_types.h codes, not RkDisplayOutputManager.DISPLAY_OVERSCAN_*
+    private static final int OVERSCAN_LEFT = 0;
+    private static final int OVERSCAN_TOP = 1;
+    private static final int OVERSCAN_RIGHT = 2;
+    private static final int OVERSCAN_BOTTOM = 3;
+
     static String[] getModes(int dpy) {
         RkDisplayOutputManager m = manager();
         if (m == null) {
@@ -93,6 +100,54 @@ final class RkOutputClient {
         if (m != null) {
             m.saveConfig();
         }
+    }
+
+    static String[] getColorModes(int dpy) {
+        RkDisplayOutputManager m = manager();
+        if (m == null) {
+            return null;
+        }
+        return m.getSupportCorlorList(dpy, m.getCurrentInterface(dpy));
+    }
+
+    static String getColorMode(int dpy) {
+        RkDisplayOutputManager m = manager();
+        if (m == null) {
+            return null;
+        }
+        return m.getCurrentColorMode(dpy, m.getCurrentInterface(dpy));
+    }
+
+    static void setColorMode(int dpy, String format) {
+        RkDisplayOutputManager m = manager();
+        if (m != null) {
+            m.setColorMode(dpy, m.getCurrentInterface(dpy), format);
+        }
+    }
+
+    // {horizontal, vertical} percent; the HAL keeps left == right and top == bottom
+    static int[] getScale(int dpy) {
+        RkDisplayOutputManager m = manager();
+        if (m == null) {
+            return null;
+        }
+        Rect r = m.getOverScan(dpy);
+        return new int[] {r.left, r.top};
+    }
+
+    static void setScale(int dpy, boolean horizontal, int value) {
+        RkDisplayOutputManager m = manager();
+        if (m == null) {
+            return;
+        }
+        if (horizontal) {
+            m.setOverScan(dpy, OVERSCAN_LEFT, value);
+            m.setOverScan(dpy, OVERSCAN_RIGHT, value);
+        } else {
+            m.setOverScan(dpy, OVERSCAN_TOP, value);
+            m.setOverScan(dpy, OVERSCAN_BOTTOM, value);
+        }
+        m.saveConfig();
     }
 
     // "2560x1440p59.95-3" -> "2560x1440p59.95"

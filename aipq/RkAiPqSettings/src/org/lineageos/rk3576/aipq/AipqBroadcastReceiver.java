@@ -84,6 +84,19 @@ public class AipqBroadcastReceiver extends BroadcastReceiver {
                 TvSettingsSliceProvider.invalidateSlice(context,
                         AipqSliceProvider.RESOLUTION_URI);
                 return;
+            case AipqProps.KNOB_COLOR:
+                applyColor(context, intent.getStringExtra(EXTRA_MODE));
+                TvSettingsSliceProvider.invalidateSlice(context,
+                        AipqSliceProvider.RESOLUTION_URI);
+                return;
+            case AipqProps.KNOB_SCALE_H:
+            case AipqProps.KNOB_SCALE_V:
+                RkOutputClient.setScale(RkOutputClient.DISPLAY_MAIN,
+                        AipqProps.KNOB_SCALE_H.equals(knob),
+                        intent.getIntExtra(EXTRA_VALUE, 100));
+                TvSettingsSliceProvider.invalidateSlice(context,
+                        AipqSliceProvider.SCALE_URI);
+                return;
             default:
                 return;
         }
@@ -108,9 +121,23 @@ public class AipqBroadcastReceiver extends BroadcastReceiver {
             return;
         }
         RkOutputClient.setMode(RkOutputClient.DISPLAY_MAIN, mode);
+        confirm(context, ResolutionConfirmActivity.KIND_MODE, mode, previous);
+    }
+
+    private static void applyColor(Context context, String format) {
+        String previous = RkOutputClient.getColorMode(RkOutputClient.DISPLAY_MAIN);
+        if (format == null || format.equals(previous)) {
+            return;
+        }
+        RkOutputClient.setColorMode(RkOutputClient.DISPLAY_MAIN, format);
+        confirm(context, ResolutionConfirmActivity.KIND_COLOR, format, previous);
+    }
+
+    private static void confirm(Context context, String kind, String value, String previous) {
         context.startActivity(new Intent(context, ResolutionConfirmActivity.class)
                 .addFlags(Intent.FLAG_ACTIVITY_NEW_TASK)
-                .putExtra(ResolutionConfirmActivity.EXTRA_MODE, mode)
+                .putExtra(ResolutionConfirmActivity.EXTRA_KIND, kind)
+                .putExtra(ResolutionConfirmActivity.EXTRA_MODE, value)
                 .putExtra(ResolutionConfirmActivity.EXTRA_PREVIOUS, previous));
     }
 
